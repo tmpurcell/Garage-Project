@@ -1,0 +1,519 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+
+<style>
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .modal-overlay.active {
+        display: flex;
+    }
+    
+    .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        max-width: 400px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .modal-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6b7280;
+        padding: 0.25rem;
+        line-height: 1;
+    }
+    
+    .modal-close:hover {
+        color: #374151;
+    }
+
+    /* Garage door animation */
+    .garage-door-overlay {
+    position: fixed;
+    inset: 0;
+    background: #0f172a;
+    z-index: 2000;
+    overflow: hidden;
+    display: none;
+    }
+
+    .garage-door-overlay.active {
+        display: block;
+    }
+
+    /* Door container */
+    .garage-door {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        background: #6b6b6b;
+        box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+        transform: translateY(0);
+        animation: garageDoorLift 1.9s cubic-bezier(.22,.61,.36,1) forwards;
+        will-change: transform;
+    }
+
+    /* Individual door panels */
+    .garage-door-panel {
+        flex: 1;
+        background: linear-gradient(
+            to bottom,
+            #8a8a8a,
+            #a0a0a0 50%,
+            #6f6f6f
+        );
+        border-bottom: 1px solid rgba(0,0,0,0.35);
+    }
+
+    /* Handle */
+    .garage-handle {
+        position: absolute;
+        bottom: 14%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 70px;
+        height: 18px;
+        background: #2f2f2f;
+        border-radius: 12px;
+        box-shadow: inset 0 2px 4px rgba(255,255,255,0.25);
+    }
+
+    /* Interior reveal */
+    .garage-interior {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at center, #2c3e50, #020617);
+        opacity: 0;
+        animation: garageInteriorFade 1.2s ease-out 0.9s forwards;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .garage-content {
+        text-align: center;
+        color: white;
+        opacity: 0;
+        transform: translateY(25px);
+        animation: garageContentIn 1s ease-out 1.3s forwards;
+    }
+
+    /* Animations */
+    @keyframes garageDoorLift {
+        0% {
+            transform: translateY(0);
+        }
+        80% {
+            transform: translateY(-92%);
+        }
+        100% {
+            transform: translateY(-100%);
+        }
+    }
+
+    @keyframes garageInteriorFade {
+        to { opacity: 1; }
+    }
+
+    @keyframes garageContentIn {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+
+<!-- Hero Section -->
+<div class="text-center py-12">
+    <h1 class="text-4xl font-bold text-gray-900 mb-4">Welcome to Your Digital Garage 🏁</h1>
+    <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+        Track, maintain, and manage your vehicle collection with ease. Keep detailed records of maintenance, 
+        aftermarket parts, and scheduled services all in one place.
+    </p>
+    
+    <div class="space-x-4">
+        <button onclick="openRegisterModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors">
+            Get Started
+        </button>
+        <button onclick="openLoginModal()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors">
+            Login
+        </button>
+    </div>
+</div>
+
+<!-- Login Modal -->
+<div id="loginModal" class="modal-overlay">
+    <div class="modal-content">
+        <button onclick="closeLoginModal()" class="modal-close">&times;</button>
+        
+        <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Sign in to your account</h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Or
+                <a href="{{ url_for('register') }}" class="font-medium text-blue-600 hover:text-blue-500">
+                    create a new account
+                </a>
+            </p>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="rounded-md bg-red-50 p-4 mb-4">
+                        <div class="flex">
+                            <div class="ml-3">
+                                <p class="text-sm font-medium text-red-800">
+                                    {{ message }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form id="loginForm" action="{{ url_for('login') }}" method="POST">
+            <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+            <div class="space-y-4">
+                <div>
+                    <label for="modal-username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input id="modal-username" name="username" type="text" required 
+                        class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                            placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                            focus:border-blue-500 sm:text-sm" 
+                        placeholder="Enter your username">
+                </div>
+                <div>
+                    <label for="modal-password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input id="modal-password" name="password" type="password" autocomplete="current-password" required 
+                        class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                                placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                focus:border-blue-500 sm:text-sm" 
+                        placeholder="Enter your password">
+                </div>
+            </div>
+
+            <div class="flex items-center mt-4">
+                <input id="modal-remember-me" name="remember-me" type="checkbox" 
+                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                <label for="modal-remember-me" class="ml-2 block text-sm text-gray-900">
+                    Remember me
+                </label>
+            </div>
+
+            <div class="mt-6">
+                <button type="submit" 
+                    class="group relative w-full flex justify-center py-3 px-4 border border-transparent 
+                        text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 
+                        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                        shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                        <svg class="h-5 w-5 text-blue-500 group-hover:text-blue-400" xmlns="http://www.w3.org/2000/svg" 
+                            viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                        </svg>
+                    </span>
+                    Sign in
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Register Modal -->
+<div id="registerModal" class="modal-overlay">
+    <div class="modal-content">
+        <button onclick="closeRegisterModal()" class="modal-close">&times;</button>
+        
+        <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Create your account</h2>
+            <p class="mt-2 text-sm text-gray-600">
+                Already have an account? 
+                <button onclick="switchToLogin()" class="font-medium text-blue-600 hover:text-blue-500">
+                    Sign in
+                </button>
+            </p>
+        </div>
+        
+        <form id="registerForm" action="{{ url_for('register') }}" method="POST">
+            <div class="space-y-4">
+                <div>
+                    <label for="reg-first-name" class="block text-sm font-medium text-gray-700">First Name</label>
+                    <input id="reg-first-name" name="first_name" type="text" required 
+                        class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                            placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                            focus:border-blue-500 sm:text-sm" 
+                        placeholder="Enter your first name">
+                </div>
+                <div>
+                    <label for="reg-last-name" class="block text-sm font-medium text-gray-700">Last Name</label>
+                    <input id="reg-last-name" name="last_name" type="text" required 
+                        class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                            placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                            focus:border-blue-500 sm:text-sm" 
+                        placeholder="Enter your last name">
+                </div>
+                <div>
+                    <label for="reg-username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input id="reg-username" name="username" type="text" required 
+                        class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                            placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                            focus:border-blue-500 sm:text-sm" 
+                        placeholder="Choose a username">
+                </div>
+                <div>
+                    <label for="reg-email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input id="reg-email" name="email" type="email" 
+                        class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                            placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                            focus:border-blue-500 sm:text-sm" 
+                        placeholder="Enter your email">
+                </div>
+                <div>
+                    <label for="reg-password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input id="reg-password" name="password" type="password" required 
+                        class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                            placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                            focus:border-blue-500 sm:text-sm" 
+                        placeholder="Create a password">
+                </div>
+                <div>
+                    <label for="reg-confirm-password" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                    <input id="reg-confirm-password" name="confirm-password" type="password" required 
+                        class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                            placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                            focus:border-blue-500 sm:text-sm" 
+                        placeholder="Confirm your password">
+                </div>
+            </div>
+
+            <div class="mt-6">
+                <button type="submit" 
+                    class="group relative w-full flex justify-center py-3 px-4 border border-transparent 
+                        text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 
+                        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                        shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                        <svg class="h-5 w-5 text-blue-500 group-hover:text-blue-400" xmlns="http://www.w3.org/2000/svg" 
+                            viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                        </svg>
+                    </span>
+                    Create Account
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Garage Door Animation -->
+<div id="garageDoorOverlay" class="garage-door-overlay">
+    <div class="garage-door">
+        <div class="garage-door-panel"></div>
+        <div class="garage-door-panel"></div>
+        <div class="garage-door-panel"></div>
+        <div class="garage-door-panel"></div>
+        <div class="garage-door-panel"></div>
+        <div class="garage-handle"></div>
+    </div>
+
+    <div class="garage-interior">
+        <div class="garage-content">
+            <h1 class="text-4xl font-bold mb-4">Welcome to Your Garage! 🏁</h1>
+            <p class="text-xl">Loading your vehicles...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="py-12">
+    <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">Everything You Need for Vehicle Management</h2>
+    
+    <div class="flex flex-col md:flex-row justify-center items-center gap-8 md:gap-16">
+        <!-- Feature 1 -->
+        <div class="text-center flex-1 max-w-xs">
+            <div class="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-wrench text-blue-600 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">Maintenance Tracking</h3>
+            <p class="text-gray-600 text-sm">Keep detailed records of all maintenance services, costs, and service providers.</p>
+        </div>
+        
+        <!-- Feature 2 -->
+        <div class="text-center flex-1 max-w-xs">
+            <div class="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-cog text-green-600 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">Aftermarket Parts</h3>
+            <p class="text-gray-600 text-sm">Track installed modifications, costs, and installation dates for all your upgrades.</p>
+        </div>
+        
+        <!-- Feature 3 -->
+        <div class="text-center flex-1 max-w-xs">
+            <div class="bg-purple-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
+                <i class="fas fa-calendar text-purple-600 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">Scheduled Maintenance</h3>
+            <p class="text-gray-600 text-sm">Never miss service intervals with automated reminders and scheduling.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Demo Section -->
+<div class="py-12 bg-gray-50 rounded-lg">
+    <h2 class="text-2xl font-bold text-center text-gray-900 mb-8">See It In Action</h2>
+    
+    <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Demo Card 1 -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="bg-blue-100 rounded-lg w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-car text-blue-600 text-4xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">Track Everything</h3>
+            <p class="text-gray-600 text-sm">Keep comprehensive records of all your vehicles in one organized system.</p>
+        </div>
+        
+        <!-- Demo Card 2 -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="bg-green-100 rounded-lg w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-tools text-green-600 text-4xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">Never Forget Maintenance</h3>
+            <p class="text-gray-600 text-sm">Get automated reminders for oil changes, tire rotations, and more.</p>
+        </div>
+        
+        <!-- Demo Card 3 -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="bg-purple-100 rounded-lg w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-images text-purple-600 text-4xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold mb-2">Visual History</h3>
+            <p class="text-gray-600 text-sm">See photos and records of all your past and current vehicles.</p>
+        </div>
+    </div>
+    
+    <div class="text-center mt-8">
+        <button onclick="openRegisterModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors">
+            Start Your Free Garage Today
+        </button>
+    </div>
+</div>
+
+<script>
+function openLoginModal() {
+    document.getElementById('loginModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeLoginModal() {
+    document.getElementById('loginModal').classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+function openRegisterModal() {
+    document.getElementById('registerModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeRegisterModal() {
+    document.getElementById('registerModal').classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+
+function switchToLogin() {
+    closeRegisterModal();
+    openLoginModal();
+}
+
+// Close modal when clicking outside
+document.getElementById('loginModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeLoginModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeLoginModal();
+    }
+});
+
+// Handle form submission
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault(); // Prevent normal submission
+    
+    // Submit the form via fetch
+    const formData = new FormData(this);
+    
+    fetch(this.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show garage door animation
+            showGarageDoorAnimation();
+            
+            // Redirect after animation completes
+            setTimeout(() => {
+                window.location.href = data.redirect || '/cars';
+            }, 3000);
+        } else {
+            // Show error messages
+            if (data.error) {
+                flash(data.error, 'error');
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Fallback to normal form submission
+        this.submit();
+    });
+});
+
+function showGarageDoorAnimation() {
+    const overlay = document.getElementById('garageDoorOverlay');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    
+    // Fade out after 2 seconds and redirect
+    setTimeout(() => {
+        overlay.classList.remove('active');
+        document.body.style.overflow = 'auto';
+        
+        // Redirect to cars page
+        window.location.href = '/cars';
+    }, 2000);
+}
+
+</script>
+
+{% endblock %}

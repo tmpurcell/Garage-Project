@@ -1,0 +1,558 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    .vehicle-section {
+        transition: all 0.3s ease-in-out;
+    }
+
+    .vehicle-section.hidden {
+        display: none;
+    }
+
+    /* Modal styles */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        max-width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        position: relative;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    .modal-close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6b7280;
+        padding: 0.25rem;
+        line-height: 1;
+    }
+
+    .modal-close:hover {
+        color: #374151;
+    }
+</style>
+
+
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">My Garage</h1>
+    </div>
+
+    <!-- Vehicle Type Tabs -->
+    <div class="mb-8">
+        <div class="flex flex-wrap gap-2 items-center border-b border-gray-200">
+            {% set vehicle_types = ['Car', 'Truck', 'Motorcycle', 'Boat', 'RV'] %}
+            {% set icon_map = {
+                'Car': 'fa-car',
+                'Truck': 'fa-truck',
+                'Motorcycle': 'fa-motorcycle',
+                'Boat': 'fa-ship',
+                'RV': 'fa-campground',
+            } %}
+            
+            <!-- Vehicle Type Tabs -->
+            {% for vehicle_type in vehicle_types %}
+                {% set active_count = active_cars_grouped.get(vehicle_type, [])|length %}
+                {% set past_count = past_cars_grouped.get(vehicle_type, [])|length %}
+                {% set total_count = active_count + past_count %}
+                {% if total_count > 0 %}
+                <button onclick="showVehicleType('{{ vehicle_type }}')" 
+                        id="tab-{{ vehicle_type.lower() }}"
+                        class="px-4 py-2 mb-2 mr-2 transition-colors flex items-center gap-2 border-b-2 border-transparent hover:border-blue-500
+                            {% if loop.first %}bg-blue-600 text-white border-blue-600{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                    <i class="fas {{ icon_map.get(vehicle_type, 'fa-question-circle') }}"></i>
+                    {{ vehicle_type }}
+                    <span class="{% if loop.first %}bg-blue-800{% else %}bg-gray-600{% endif %} text-xs px-2 py-1 rounded-full">{{ total_count }}</span>
+                </button>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Vehicle Sections -->
+    <div class="mb-12">
+        {% for vehicle_type in ['Car', 'Truck', 'Motorcycle', 'Boat', 'RV'] %}
+        {% set active_count = active_cars_grouped.get(vehicle_type, [])|length %}
+        {% set past_count = past_cars_grouped.get(vehicle_type, [])|length %}
+        {% if active_count > 0 or past_count > 0 %}
+        <div id="section-{{ vehicle_type.lower() }}" class="vehicle-section {% if vehicle_type != 'Car' %}hidden{% endif %}">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700">{{ vehicle_type }}s</h2>
+            
+            <!-- Active Vehicles -->
+            {% if active_count > 0 %}
+            <div class="mb-8">
+                <h3 class="text-lg font-medium mb-4 text-gray-600">Current {{ vehicle_type }}s</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for car in active_cars_grouped.get(vehicle_type, []) %}
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                        {% if car.image_path %}
+                        <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" alt="{{ car.year }} {{ car.make }} {{ car.model }}" class="w-full h-48 object-cover">
+                        {% else %}
+                        <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                            <i class="fas {{ icon_map.get(vehicle_type, 'fa-question-circle') }} text-4xl text-gray-400"></i>
+                        </div>
+                        {% endif %}
+                        <div class="p-4">
+                            <h3 class="text-xl font-semibold">{{ car.year }} {{ car.make }} {{ car.model }}</h3>
+                            <div class="mt-4 flex justify-between items-center">
+                                <a href="{{ url_for('car_detail', car_id=car.id) }}" class="text-blue-600 hover:text-blue-800">View Details</a>
+                                <span class="text-sm text-green-600">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Past Vehicles -->
+            {% if past_count > 0 %}
+            <div>
+                <h3 class="text-lg font-medium mb-4 text-gray-600">Past {{ vehicle_type }}s</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for car in past_cars_grouped.get(vehicle_type, []) %}
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 relative group">
+                        <!-- Car Image with Overlay -->
+                        <div class="h-48 bg-gray-200 overflow-hidden relative">
+                            {% if car.image_path %}
+                            <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" 
+                                alt="{{ car.make }} {{ car.model }}" 
+                                class="w-full h-full object-cover">
+                            {% else %}
+                            <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400">
+                                <i class="fas {{ icon_map.get(vehicle_type, 'fa-question-circle') }} text-4xl text-gray-500"></i>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Reason Banner Overlay -->
+                            {% if car.reason %}
+                            <div class="absolute top-0 left-0 right-0 bg-red-600 text-white px-3 py-2 text-sm font-medium">
+                                {{ car.reason }}
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Hover Restore Button -->
+                            <div class="absolute -right-16 top-1/2 transform -translate-y-1/2 transition-all duration-300 group-hover:right-2">
+                                <form action="{{ url_for('restore_car', car_id=car.id) }}" method="post" class="inline">
+                                    <button type="submit" 
+                                            class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 rounded-l-lg shadow-lg transform hover:scale-105 transition-all duration-200"
+                                            title="Restore to Garage">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                            <!-- Delete Button -->
+                            <div class="absolute -left-16 top-1/2 transform -translate-y-1/2 transition-all duration-300 group-hover:left-2">
+                                <button
+                                    data-id="{{ car.id }}"
+                                    data-name="{{ car.make }} {{ car.model }}"
+                                    class="delete-btn bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-3 rounded-r-lg shadow-lg transform hover:scale-105 transition-all duration-200"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Car Details -->
+                        <div class="p-4">
+                            <h3 class="text-xl font-semibold text-gray-600">{{ car.year }} {{ car.make }} {{ car.model }}</h3>
+                            <div class="mt-4">
+                                <a href="{{ url_for('car_detail', car_id=car.id) }}" class="text-blue-600 hover:text-blue-800">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- Floating Add Vehicle Button -->
+    <button onclick="openAddCarModal()" class="fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-40 flex items-center gap-2">
+        <i class="fas fa-plus"></i>
+        Add Vehicle
+    </button>
+
+    <!-- Add Car Modal -->
+    <div id="addCarModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px;">
+            <button onclick="closeAddCarModal()" class="modal-close">&times;</button>
+            
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Add New Vehicle</h2>
+            </div>
+            
+            <form id="addCarForm" action="{{ url_for('add_car') }}" method="POST" enctype="multipart/form-data">
+                <div class="space-y-4">
+                    <div>
+                        <label for="vehicle-type" class="block text-sm font-medium text-gray-700">Vehicle Type</label>
+                        <select id="vehicle-type" name="vehicle_type" required 
+                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                                        placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                        focus:border-blue-500 sm:text-sm">
+                            <option value="Car">Car</option>
+                            <option value="Truck">Truck</option>
+                            <option value="Motorcycle">Motorcycle</option>
+                            <option value="Boat">Boat</option>
+                            <option value="RV">RV</option>
+                        </select>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="make" class="block text-sm font-medium text-gray-700">Make</label>
+                            <input id="make" name="make" type="text" required 
+                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                    focus:border-blue-500 sm:text-sm" 
+                                placeholder="e.g., Toyota">
+                        </div>
+                        <div>
+                            <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
+                            <input id="model" name="model" type="text" required 
+                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                    focus:border-blue-500 sm:text-sm" 
+                                placeholder="e.g., Camry">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="year" class="block text-sm font-medium text-gray-700">Year</label>
+                            <input id="year" name="year" type="number" required 
+                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                    focus:border-blue-500 sm:text-sm" 
+                                placeholder="e.g., 2023">
+                        </div>
+                        <div>
+                            <label for="image" class="block text-sm font-medium text-gray-700">Image</label>
+                            <input id="image" name="image" type="file" accept="image/*"
+                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                                    text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                    focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <div id="hours-field" style="display: none;">
+                            <label for="hours" class="block text-sm font-medium text-gray-700">Hours (Boat Only)</label>
+                            <input id="hours" name="hours" type="number" step="0.1"
+                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                    focus:border-blue-500 sm:text-sm" 
+                                placeholder="e.g., 250.5">
+                        </div>
+                        <div id="miles-field" style="display: none;">
+                            <label for="miles" class="block text-sm font-medium text-gray-700">Miles</label>
+                            <input id="miles" name="miles" type="number" step="0.1"
+                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                    focus:border-blue-500 sm:text-sm" 
+                                placeholder="e.g., 25000">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <button type="submit" 
+                        class="group relative w-full flex justify-center py-3 px-4 border border-transparent 
+                            text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 
+                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                            shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
+                        <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                            <svg class="h-5 w-5 text-blue-500 group-hover:text-blue-400" xmlns="http://www.w3.org/2000/svg" 
+                                viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 006 0zm-7 9a7 7 0 1114 0H3a2 2 0 00-2 2v6a2 2 0 002 2H5a2 2 0 002-2v-6a2 2 0 00-2-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        Add Vehicle
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <button onclick="closeDeleteModal()" class="modal-close">&times;</button>
+            
+            <div class="text-center mb-6">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900">Delete Vehicle</h2>
+                <p class="text-gray-600 mt-2">This action cannot be undone. The vehicle will be permanently deleted.</p>
+            </div>
+            
+            <form id="deleteForm" method="POST">
+                <input type="hidden" id="deleteCarId" name="car_id">
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Type <span id="deleteCarName" class="font-bold text-red-600"></span> to confirm deletion:
+                    </label>
+                    <input type="text" id="deleteConfirmation" name="confirmation" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
+                        placeholder="Type make and model to confirm">
+                </div>
+                
+                <div class="flex gap-3">
+                    <button type="submit" 
+                        class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        Delete Forever
+                    </button>
+                    <button type="button" onclick="closeDeleteModal()" 
+                        class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-2 px-4 rounded-lg transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script>
+
+    function openAddCarModal() {
+        document.getElementById('addCarModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeAddCarModal() {
+        document.getElementById('addCarModal').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+    
+    // Handle form submission
+    document.getElementById('addCarForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                // Close modal and reload page
+                closeAddCarModal();
+                window.location.reload();
+            } else {
+                // Show error
+                alert('Error adding vehicle. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Fallback to normal form submission
+            this.submit();
+        });
+    });
+
+    // Close modal when clicking outside
+    document.getElementById('addCarModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeAddCarModal();
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAddCarModal();
+        }
+    });
+
+    function toggleHoursField() {
+        const vehicleType = document.getElementById('vehicle-type').value;
+        const hoursField = document.getElementById('hours-field');
+        const milesField = document.getElementById('miles-field');
+                
+        if (vehicleType === 'Boat') {
+            hoursField.style.display = 'block';
+            milesField.style.display = 'none';
+        } else {
+            hoursField.style.display = 'none';
+            milesField.style.display = 'block';
+        }
+    }
+
+    // Add event listener
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        // Only initialize when modal is opened
+        const addCarButton = document.querySelector('[onclick="openAddCarModal()"]');
+        if (addCarButton) {
+            addCarButton.addEventListener('click', function() {
+                setTimeout(function() { // Small delay to ensure modal is rendered
+                    setupVehicleTypeToggle();
+                }, 200); // Increased delay to 200ms
+            });
+        }
+    });
+
+    function setupVehicleTypeToggle() {
+        const vehicleSelect = document.getElementById('vehicle-type');
+        
+        if (vehicleSelect) {
+            
+            // Remove any existing listeners to prevent duplicates
+            vehicleSelect.removeEventListener('change', toggleHoursField);
+            
+            vehicleSelect.addEventListener('change', function() {
+                toggleHoursField();
+            });
+            
+            // Initial toggle after a small delay
+            setTimeout(function() {
+                toggleHoursField();
+            }, 50);
+        } else {
+            console.log('Vehicle select not found!'); // Debug line
+        }
+    }
+    
+    function showVehicleType(vehicleType) {
+        // Hide all vehicle sections
+        const allSections = document.querySelectorAll('.vehicle-section');
+        allSections.forEach(section => {
+            section.classList.add('hidden');
+        });
+        
+        // Show selected vehicle section
+        const selectedSection = document.getElementById(`section-${vehicleType.toLowerCase()}`);
+        if (selectedSection) {
+            selectedSection.classList.remove('hidden');
+        }
+        
+        // Update tab styles
+        const allTabs = document.querySelectorAll('[id^="tab-"]');
+        allTabs.forEach(tab => {
+            tab.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+            tab.classList.add('bg-gray-100', 'text-gray-700', 'border-transparent');
+        });
+        
+        const selectedTab = document.getElementById(`tab-${vehicleType.toLowerCase()}`);
+        if (selectedTab) {
+            selectedTab.classList.remove('bg-gray-100', 'text-gray-700', 'border-transparent');
+            selectedTab.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+            
+            // Update badge color
+            const badge = selectedTab.querySelector('span');
+            if (badge) {
+                badge.classList.remove('bg-gray-600');
+                badge.classList.add('bg-blue-800');
+            }
+        }
+    }
+
+    function openDeleteModal(carId, carName) {
+        document.getElementById('deleteCarId').value = carId;
+        document.getElementById('deleteCarName').textContent = carName;
+        document.getElementById('deleteConfirmation').value = '';
+        document.getElementById('deleteModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+
+    // Handle delete form submission
+    document.getElementById('deleteForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const carId = document.getElementById('deleteCarId').value;
+        const confirmation = document.getElementById('deleteConfirmation').value;
+        const carName = document.getElementById('deleteCarName').textContent;
+        
+        if (confirmation.toLowerCase() !== carName.toLowerCase()) {
+            alert('Make and model do not match. Please type the exact make and model to confirm deletion.');
+            return;
+        }
+        
+        // Submit the delete request
+        fetch(`/car/${carId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `car_id=${carId}&confirmation=${encodeURIComponent(confirmation)}`
+        })
+        .then(response => {
+            if (response.ok) {
+                closeDeleteModal();
+                window.location.reload();
+            } else {
+                alert('Error deleting vehicle. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting vehicle. Please try again.');
+        });
+    });
+
+    // Close modal when clicking outside
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeDeleteModal();
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDeleteModal();
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.delete-btn');
+        if (!btn) return;
+
+        const carId = btn.dataset.id;
+        const carName = btn.dataset.name;
+
+        openDeleteModal(carId, carName);
+    });
+
+</script>
+{% endblock %}

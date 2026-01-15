@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>My Garage</title>
+        <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>
+            .menu-transition {
+                transition: transform 0.3s ease-in-out;
+            }
+            .menu-closed {
+                transform: translateX(100%);
+            }
+            .menu-open {
+                transform: translateX(0);
+            }
+            .overlay {
+                transition: opacity 0.3s ease-in-out;
+            }
+            .overlay-hidden {
+                opacity: 0;
+                pointer-events: none;
+            }
+            header.sticky {
+                backdrop-filter: blur(8px);
+                background-color: rgba(31, 41, 55, 0.95); /* semi-transparent gray-800 */
+            }
+        </style>
+    </head>
+    <body class="bg-gray-300 text-gray-800 min-h-screen font-sans flex flex-col h-full">
+        <header class="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-50">            
+            <div class="max-w-8xl mx-auto flex items-center">
+                <!-- Left side - Empty spacer to balance the right side -->
+                <div class="w-8"></div>
+                
+                <!-- Center - Logo -->
+                <div class="flex-1">
+                    <a href="{{ url_for('cars') }}" class="text-2xl font-bold hover:text-gray-300 transition-colors">
+                        My Garage
+                    </a>
+                </div>
+                <!-- Right side - Welcome message and hamburger -->
+                <div class="flex items-center">
+                    {% if 'user_id' in session %}
+                        {% if session['username'] %}
+                            <span class="text-gray-300 mr-4">Welcome, {{ session.get('first_name', 'User') }}</span>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <!-- Mobile menu button -->
+                    <button id="menuButton" class="p-2 -m-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white transition-colors">
+                        <i class="fas fa-bars text-white"></i>
+                    </button>
+                </div>
+                    
+                <!-- Regular menu items (hidden on mobile)
+                <div class="hidden md:flex items-center space-x-6 ml-6">
+                    {% if 'user_id' in session %}
+                        {% if session['username'] %}
+                            <span class="text-gray-300 mr-4">Welcome, {{ session.get('first_name', 'User') }}</span>
+                        {% endif %}
+                        <a href="{{ url_for('profile') }}" class="text-sm text-white hover:text-gray-300 transition-colors">My Account</a>
+                        <a href="{{ url_for('logout') }}" class="text-sm text-white hover:text-gray-300 transition-colors">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="text-sm text-white hover:text-gray-300 transition-colors">Login</a>
+                        <a href="{{ url_for('register') }}" class="text-sm text-white hover:text-gray-300 transition-colors">Register</a>
+                    {% endif %}
+                </div> -->
+            </div>
+        </header>
+        
+        <!-- Overlay -->
+        <div id="overlay" class="overlay overlay-hidden fixed inset-0 bg-black bg-opacity-50 z-40"></div>
+        
+        <!-- Slide-out Menu -->
+        <div id="sideMenu" class="menu-transition menu-closed fixed inset-y-0 right-0 w-64 bg-white shadow-lg z-50 p-4">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-xl font-semibold">Menu</h2>
+                <button id="closeMenu" class="p-1 rounded-full hover:bg-gray-100">
+                    <i class="fas fa-times text-gray-500"></i>
+                </button>
+            </div>
+            
+            <nav class="space-y-4">
+                <a href="{{ url_for('home') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">Home</a>
+                <a href="{{ url_for('cars') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">My Cars</a>
+                <a href="{{ url_for('add_car') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">Add Vehicle</a>
+                
+                {% if 'user_id' in session %}
+                    <hr class="my-4">
+                    <a href="{{ url_for('profile') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">My Account</a>
+                    <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">Logout</a>
+                {% else %}
+                    <hr class="my-4">
+                    <button onclick="switchToLogin()" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                        Sign in
+                    </button>
+                    <button onclick="openRegisterModal()" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">
+                        Register
+                    </button>
+                {% endif %}
+            </nav>
+        </div>
+        <main class="flex-1 p-6 max-w-6xl w-full mx-auto">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="mb-4 rounded-md bg-{{ category }}-50 p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-{{ category }}-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        {% if category == 'success' %}
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                        {% else %}
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                        {% endif %}
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-{{ category }}-800">
+                                        {{ message }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </main>
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const menuButton = document.getElementById('menuButton');
+                const closeMenu = document.getElementById('closeMenu');
+                const sideMenu = document.getElementById('sideMenu');
+                const overlay = document.getElementById('overlay');
+                
+                if (menuButton && closeMenu && sideMenu && overlay) {
+                    function toggleMenu() {
+                        sideMenu.classList.toggle('menu-open');
+                        sideMenu.classList.toggle('menu-closed');
+                        overlay.classList.toggle('overlay-hidden');
+                    }
+                    
+                    // Toggle menu when clicking the menu button
+                    menuButton.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        toggleMenu();
+                    });
+                    
+                    // Close menu when clicking the close button
+                    closeMenu.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        toggleMenu();
+                    });
+                    
+                    // Close menu when clicking the overlay
+                    overlay.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        toggleMenu();
+                    });
+                    
+                    // Close menu when clicking outside
+                    document.addEventListener('click', function(e) {
+                        if (!sideMenu.contains(e.target) && e.target !== menuButton) {
+                            sideMenu.classList.add('menu-closed');
+                            sideMenu.classList.remove('menu-open');
+                            overlay.classList.add('overlay-hidden');
+                        }
+                    });
+                    
+                    // Close menu with Escape key
+                    document.addEventListener('keydown', function(e) {
+                        if (e.key === 'Escape') {
+                            sideMenu.classList.add('menu-closed');
+                            sideMenu.classList.remove('menu-open');
+                            overlay.classList.add('overlay-hidden');
+                        }
+                    });
+                    
+                    // Allow clicks inside the menu without closing it
+                    sideMenu.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                    });
+                }
+            });
+        </script>
+    </body>
+</html>

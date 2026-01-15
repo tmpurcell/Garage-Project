@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Add a New Vehicle</h2>
+<form action="{{ url_for('add_car') }}" method="POST" enctype="multipart/form-data" class="space-y-4 max-w-md">
+    
+    <div>
+        <label class="block font-medium">Vehicle Type:</label>
+        <select name="vehicle_type" class="border p-2 w-full rounded" required>
+            <option value="">Select Type</option>
+            <option value="Car">Car</option>
+            <option value="Truck">Truck</option>
+            <option value="Motorcycle">Motorcycle</option>
+            <option value="Boat">Boat</option>
+            <option value="RV">RV</option>
+        </select>
+    </div>
+
+    <div>
+        <label class="block font-medium">Make:</label>
+        <input type="text" name="make" class="border p-2 w-full rounded" required>
+    </div>
+    <div>
+        <label class="block font-medium">Model:</label>
+        <input type="text" name="model" class="border p-2 w-full rounded" required>
+    </div>
+    <div>
+        <label class="block font-medium">Year:</label>
+        <input type="number" name="year" class="border p-2 w-full rounded" required>
+    </div>
+    <div>
+        <label class="block font-medium">Vehicle Image (optional):</label>
+        <input type="file" name="image" accept="image/*" class="border p-2 w-full rounded">
+        <p class="text-sm text-gray-600 mt-1">Accepted formats: PNG, JPG, JPEG, GIF, WEBP (max 16MB)</p>
+    </div>
+
+    <button type="submit" class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">Add Vehicle</button>
+</form>
+{% endblock %}
