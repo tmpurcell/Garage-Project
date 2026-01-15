@@ -159,42 +159,86 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        email = request.form.get('email')
-        confirm_password = request.form.get('confirm-password')
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
         first_name = request.form.get('first_name', '').strip()
-        last_name = request.form.get('last_name', '').strip()
         
-        if not all([username, password, first_name, last_name]):
+        # Basic validation
+        if not email or not password or not first_name:
             flash('Please fill in all required fields', 'error')
             return redirect(url_for('register'))
-            
+        
+        # Email validation
+        if '@' not in email or '.' not in email:
+            flash('Please enter a valid email address', 'error')
+            return redirect(url_for('register'))
+        
         if password != confirm_password:
             flash('Passwords do not match', 'error')
             return redirect(url_for('register'))
-            
-        # Generate salt and hash password
-        salt = secrets.token_hex(16)
-        hashed_password = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), 100000).hex()
         
-        try:
-            conn = get_db_connection()
-            conn.execute(
-                'INSERT INTO users (username, password_hash, salt, email, first_name, last_name) VALUES (?, ?, ?, ?, ?, ?)',
-                (username, hashed_password, salt, email, first_name, last_name)
-            )
-            conn.commit()
+        # Password requirements
+        if len(password) < 8:
+            flash('Password must be at least 8 characters long', 'error')
+            return redirect(url_for('register'))
+        
+        if not any(c.isupper() for c in password):
+            flash('Password must contain at least one uppercase letter', 'error')
+            return redirect(url_for('register'))
+        
+        if not any(c.islower() for c in password):
+            flash('Password must contain at least one lowercase letter', 'error')
+            return redirect(url_for('register'))
+        
+        if not any(c.isdigit() for c in password):
+            flash('Password must contain at least one number', 'error')
+            return redirect(url_for('register'))
+        
+        # Optional: Special character requirement
+        special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+        if not any(c in special_chars for c in password):
+            flash('Password must contain at least one special character', 'error')
+            return redirect(url_for('register'))
+        
+        conn = get_db_connection()
+        
+        conn = get_db_connection()
+        
+        # Check if email already exists
+        existing_user = conn.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone()
+        if existing_user:
             conn.close()
+            flash('An account with this email already exists', 'error')
+            return redirect(url_for('register'))
+        
+        # Create new user
+        try:
+            hashed_password = generate_password_hash(password)
+            conn.execute('INSERT INTO users (email, password, first_name) VALUES (?, ?, ?)', 
+                (email, hashed_password, first_name))
+            conn.commit()
             
-            flash('Registration successful! Please log in.', 'success')
-            return redirect(url_for('landing'))
+            # Get the new user's ID
+            new_user = conn.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone()
+            user_id = new_user['id']
             
-        except sqlite3.IntegrityError:
-            flash('Username or email already exists', 'error')
+            # Auto-login the user
+            session['user_id'] = user_id
+            session['email'] = email
+            session['first_name'] = first_name
+            
+            conn.close()
+            flash('Account created successfully! Welcome!', 'success')
+            return redirect(url_for('index'))
+            
+        except sqlite3.Error as e:
+            conn.rollback()
+            conn.close()
+            flash('An error occurred while creating your account. Please try again.', 'error')
             return redirect(url_for('register'))
     
-    return render_template("register.html")
+    return render_template('register.html')
 
 @app.route('/logout')
 def logout():

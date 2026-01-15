@@ -23,7 +23,7 @@
         <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-green-500">
             <p class="text-sm text-gray-600">Total Maintenance</p>
             <p class="text-2xl font-bold text-gray-800">
-                ${{ total_maintenance_cost | currency }}
+                {{ total_maintenance_cost | currency }}
             </p>
             <p class="text-xs text-gray-500">{{ maintenance_count }} services</p>
         </div>
@@ -32,7 +32,7 @@
         <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-purple-500">
             <p class="text-sm text-gray-600">Parts & Upgrades</p>
             <p class="text-2xl font-bold text-gray-800">
-                ${{ total_parts_cost | currency }}
+                {{ total_parts_cost | currency }}
             </p>
             <p class="text-xs text-gray-500">{{ parts_count }} parts</p>
         </div>
@@ -41,7 +41,7 @@
         <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-red-500">
             <p class="text-sm text-gray-600">Total Investment</p>
             <p class="text-2xl font-bold text-gray-800">
-                ${{ total_cost | currency }}
+                {{ total_cost | currency }}
             </p>
             <p class="text-xs text-gray-500">
                 {{ (active_cars|length) + (past_cars|length) }} total vehicles
