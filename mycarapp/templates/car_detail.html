@@ -359,11 +359,11 @@
                     <!-- Receipt Image -->
                     {% if record[8] %}
                     <div class="mt-3">
-                        <a href="{{ url_for('static', filename='uploads/' + record[8]) }}" target="_blank" 
-                           class="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
+                        <a href="{{ url_for('uploaded_file', filename=record[8]) }}" target="_blank" 
+                            class="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
                             View Receipt
                         </a>
                     </div>
@@ -435,7 +435,7 @@
                     {% endif %}
                     {% if part[7] %}
                     <div class="mt-3">
-                        <a href="{{ url_for('static', filename='uploads/' + part[7]) }}" target="_blank" 
+                        <a href="{{ url_for('uploaded_file', filename=part[7]) }}" target="_blank" 
                            class="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -957,7 +957,7 @@
             if (receiptImage) {
                 currentReceiptDiv.classList.remove('hidden');
                 const receiptLink = currentReceiptDiv.querySelector('a');
-                receiptLink.href = `/static/uploads/${receiptImage}`;
+                receiptLink.href = `{{ url_for('uploaded_file', filename='') }}${receiptImage}`;
                 receiptLink.textContent = 'View Current Receipt';
             } else {
                 currentReceiptDiv.classList.add('hidden');
