@@ -37,9 +37,15 @@
                 
                 <!-- Center - Logo -->
                 <div class="flex-1">
-                    <a href="{{ url_for('home') }}" class="text-2xl font-bold hover:text-gray-300 transition-colors">
-                        My Garage
-                    </a>
+                    {% if 'user_id' not in session %}
+                        <a href="{{ url_for('landing') }}" class="text-2xl font-bold hover:text-gray-300 transition-colors">
+                            My Garage
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('home') }}" class="text-2xl font-bold hover:text-gray-300 transition-colors">
+                            My Garage
+                        </a>
+                    {% endif %}
                 </div>
                 <!-- Right side - Welcome message and hamburger -->
                 <div class="flex items-center">
@@ -65,8 +71,7 @@
                         <a href="{{ url_for('logout') }}" class="text-sm text-white hover:text-gray-300 transition-colors">Logout</a>
                     {% else %}
                         <a href="{{ url_for('login') }}" class="text-sm text-white hover:text-gray-300 transition-colors">Login</a>
-                        <a href="{{ url_for('register') }}" class="text-sm text-white hover:text-gray-300 transition-colors">Register</a>
-                    {% endif %}
+                        <button onclick="openRegisterModal()" class="text-sm text-white hover:text-gray-300 transition-colors bg-transparent border-none cursor-pointer">Register</button>                    {% endif %}
                 </div> -->
             </div>
         </header>

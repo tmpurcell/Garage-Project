@@ -6,6 +6,7 @@ import hashlib
 import secrets
 from functools import wraps
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 from urllib.parse import urlparse
 
 app = Flask(__name__)
@@ -126,26 +127,23 @@ init_db()
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
+        email = request.form['username']
         password = request.form['password']
         
         conn = get_db_connection()
-        user = conn.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
         conn.close()
         
         if user is None:
             return jsonify({'success': False, 'error': 'Invalid username or password'})
             
         # Verify password
-        salt = user['salt']
-        hashed_password = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), 100000).hex()
-        
-        if hashed_password != user['password_hash']:
-            return jsonify({'success': False, 'error': 'Invalid username or password'})
+        if not check_password_hash(user['password_hash'], password):
+            return jsonify({'success': False, 'error': 'Invalid username or password'})        
             
         session.clear()
         session['user_id'] = user['id']
-        session['username'] = user['username']
+        session['email'] = user['email']
         session['first_name'] = user['first_name']
         
         next_page = request.args.get('next')
@@ -156,89 +154,76 @@ def login():
         
     return redirect(url_for('landing'))
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
-        confirm_password = request.form.get('confirm_password', '')
-        first_name = request.form.get('first_name', '').strip()
-        
-        # Basic validation
-        if not email or not password or not first_name:
-            flash('Please fill in all required fields', 'error')
-            return redirect(url_for('register'))
-        
-        # Email validation
-        if '@' not in email or '.' not in email:
-            flash('Please enter a valid email address', 'error')
-            return redirect(url_for('register'))
-        
-        if password != confirm_password:
-            flash('Passwords do not match', 'error')
-            return redirect(url_for('register'))
-        
-        # Password requirements
-        if len(password) < 8:
-            flash('Password must be at least 8 characters long', 'error')
-            return redirect(url_for('register'))
-        
-        if not any(c.isupper() for c in password):
-            flash('Password must contain at least one uppercase letter', 'error')
-            return redirect(url_for('register'))
-        
-        if not any(c.islower() for c in password):
-            flash('Password must contain at least one lowercase letter', 'error')
-            return redirect(url_for('register'))
-        
-        if not any(c.isdigit() for c in password):
-            flash('Password must contain at least one number', 'error')
-            return redirect(url_for('register'))
-        
-        # Optional: Special character requirement
-        special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
-        if not any(c in special_chars for c in password):
-            flash('Password must contain at least one special character', 'error')
-            return redirect(url_for('register'))
-        
-        conn = get_db_connection()
-        
-        conn = get_db_connection()
-        
-        # Check if email already exists
-        existing_user = conn.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone()
-        if existing_user:
-            conn.close()
-            flash('An account with this email already exists', 'error')
-            return redirect(url_for('register'))
-        
-        # Create new user
-        try:
-            hashed_password = generate_password_hash(password)
-            conn.execute('INSERT INTO users (email, password, first_name) VALUES (?, ?, ?)', 
-                (email, hashed_password, first_name))
-            conn.commit()
-            
-            # Get the new user's ID
-            new_user = conn.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone()
-            user_id = new_user['id']
-            
-            # Auto-login the user
-            session['user_id'] = user_id
-            session['email'] = email
-            session['first_name'] = first_name
-            
-            conn.close()
-            flash('Account created successfully! Welcome!', 'success')
-            return redirect(url_for('index'))
-            
-        except sqlite3.Error as e:
-            conn.rollback()
-            conn.close()
-            flash('An error occurred while creating your account. Please try again.', 'error')
-            return redirect(url_for('register'))
+@app.route('/api/register', methods=['POST'])
+def api_register():
+    email = request.form.get('email', '').strip()
+    password = request.form.get('password', '')
+    confirm_password = request.form.get('confirm_password', '')
+    first_name = request.form.get('first_name', '').strip()
     
-    return render_template('register.html')
+    # Basic validation
+    if not email or not password or not first_name:
+        return jsonify({'success': False, 'error': 'Please fill in all required fields'})
+    
+    # Email validation
+    if '@' not in email or '.' not in email:
+        return jsonify({'success': False, 'error': 'Please enter a valid email address'})
+    
+    if password != confirm_password:
+        return jsonify({'success': False, 'error': 'Passwords do not match'})
+    
+    # Password requirements
+    if len(password) < 8:
+        return jsonify({'success': False, 'error': 'Password must be at least 8 characters long'})
+    
+    if not any(c.isupper() for c in password):
+        return jsonify({'success': False, 'error': 'Password must contain at least one uppercase letter'})
+    
+    if not any(c.islower() for c in password):
+        return jsonify({'success': False, 'error': 'Password must contain at least one lowercase letter'})
+    
+    if not any(c.isdigit() for c in password):
+        return jsonify({'success': False, 'error': 'Password must contain at least one number'})
+    
+    special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+    if not any(c in special_chars for c in password):
+        return jsonify({'success': False, 'error': 'Password must contain at least one special character'})
+    
+    conn = get_db_connection()
+    
+    # Check if email already exists
+    existing_user = conn.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone()
+    if existing_user:
+        conn.close()
+        return jsonify({'success': False, 'error': 'An account with this email already exists'})
+    
+    # Create new user
+    print(f"Attempting to insert: first_name={first_name}, last_name={request.form.get('last_name', '').strip()}, email={email}")
+    try:
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        import secrets
+        salt = secrets.token_hex(16)  # Generate a random salt
+        conn.execute('INSERT INTO users (first_name, last_name, email, username, password_hash, salt) VALUES (?, ?, ?, ?, ?, ?)', 
+            (first_name, request.form.get('last_name', '').strip(), email, email, hashed_password, salt))
+        conn.commit()
+        
+        # Get the new user's ID
+        new_user = conn.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone()
+        user_id = new_user['id']
+        
+        # Auto-login the user
+        session['user_id'] = user_id
+        session['email'] = email
+        session['first_name'] = first_name
+        
+        conn.close()
+        return jsonify({'success': True, 'redirect': url_for('home')})
+        
+    except sqlite3.Error as e:
+        conn.rollback()
+        conn.close()
+        print(f"Database error: {e}")  # Debug print
+        return jsonify({'success': False, 'error': f'Database error: {str(e)}'})
 
 @app.route('/logout')
 def logout():
@@ -256,7 +241,6 @@ def login_required(f):
 
 # Home page
 @app.route("/")
-@login_required
 def home():
     # If user is not logged in, redirect to landing page
     if 'user_id' not in session:
@@ -524,6 +508,8 @@ def add_car():
         make = request.form.get('make', '').strip()
         model = request.form.get('model', '').strip()
         year = request.form.get('year')
+        purchase_date = request.form.get('purchase_date')
+        sell_date = request.form.get('sell_date')
         hours = request.form.get('hours')
         miles = request.form.get('miles')
         
@@ -579,8 +565,8 @@ def add_car():
             conn = get_db_connection()
             try:
                 conn.execute(
-                    "INSERT INTO cars (user_id, vehicle_type, make, model, year, image_path, hours, miles) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    (session['user_id'], vehicle_type, make, model, year, image_path, hours, miles)
+                    "INSERT INTO cars (user_id, vehicle_type, make, model, year, purchase_date, sell_date, image_path, hours, miles) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (session['user_id'], vehicle_type, make, model, year, purchase_date, sell_date, image_path, hours, miles)
                 )
                 conn.commit()
                 flash('Car added successfully!', 'success')
@@ -648,6 +634,8 @@ def edit_car(car_id):
         make = request.form.get('make', '').strip()
         model = request.form.get('model', '').strip()
         year = request.form.get('year')
+        purchase_date = request.form.get('purchase_date')
+        sell_date = request.form.get('sell_date')
         hours = request.form.get('hours')
         miles = request.form.get('miles')
         
@@ -720,8 +708,8 @@ def edit_car(car_id):
         # Update the car in the database
         try:
             conn.execute(
-                "UPDATE cars SET vehicle_type = ?, make = ?, model = ?, year = ?, image_path = ?, hours = ?, miles = ? WHERE id = ? AND user_id = ?",
-                (vehicle_type, make, model, year, image_path, hours, miles, car_id, session['user_id'])
+                "UPDATE cars SET vehicle_type = ?, make = ?, model = ?, year = ?, purchase_date = ?, sell_date = ?, image_path = ?, hours = ?, miles = ? WHERE id = ? AND user_id = ?",
+                (vehicle_type, make, model, year, purchase_date, sell_date, image_path, hours, miles, car_id, session['user_id'])
             )
             conn.commit()
             flash('Car updated successfully!', 'success')

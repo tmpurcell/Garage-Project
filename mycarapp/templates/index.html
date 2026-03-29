@@ -47,8 +47,34 @@
     .modal-close:hover {
         color: #374151;
     }
+
+    /* Stats popup styles */
+    .stats-popup {
+        pointer-events: none;
+    }
+    
+    .stats-card:hover .stats-popup,
+    .group:hover .stats-popup {
+        pointer-events: auto;
+    }
+    
+    /* Ensure popups don't get clipped */
+    .group {
+        overflow: visible;
+    }
+    
+    /* Popup arrow */
+    .stats-popup::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 6px solid transparent;
+        border-top-color: white;
+    }
 </style>
-{% if not session['username'] %}
+{% if 'user_id' not in session %}
     <script>
         window.location.href = "{{ url_for('landing') }}";
     </script>
@@ -64,10 +90,10 @@
         </p>
         
         <div class="space-x-4">
-            <a href="{{ url_for('cars') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors">
+            <a href="{{ url_for('cars') }}" class="bg-racing-red hover:bg-racing-red-dark text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors">
                 View My Garage
             </a>
-            <button onclick="openAddCarModal()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors">
+            <button onclick="openAddCarModal()" class="bg-garage-gray hover:bg-garage-gray-dark text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors">
                 <i class="fas fa-plus mr-2"></i>
                 Add New Vehicle
             </button>
@@ -180,29 +206,166 @@
         <h2 class="text-2xl font-bold text-center text-gray-900 mb-8">Your Garage at a Glance</h2>
         
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div class="bg-white p-6 rounded-lg shadow text-center">
-                <div class="text-3xl font-bold text-blue-600">{{ cars|length if cars else 0 }}</div>
-                <div class="text-gray-600">Total Vehicles</div>
+            <!-- Total Vehicles Card -->
+            <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105">
+                <div class="bg-white p-6 rounded-lg shadow text-center">
+                    <div class="text-3xl font-bold text-red-600">{{ cars|length if cars else 0 }}</div>
+                    <div class="text-gray-600">Total Vehicles</div>
+                </div>
+                <!-- Popup -->
+                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 bg-white rounded-lg shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                    <h4 class="font-semibold text-gray-800 mb-3">All Your Vehicles</h4>
+                    <div class="space-y-2 max-h-48 overflow-y-auto">
+                        {% if cars %}
+                            {% for car in cars %}
+                            <a href="{{ url_for('car_detail', car_id=car.id) }}" class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded text-gray-800 no-underline">
+                                {% if car.image_path %}
+                                <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" 
+                                    alt="{{ car.make }} {{ car.model }}" 
+                                    class="w-10 h-10 object-cover rounded">
+                                {% else %}
+                                <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
+                                    <i class="fas fa-car text-gray-400 text-sm"></i>
+                                </div>
+                                {% endif %}
+                                <div class="flex-1">
+                                    <p class="font-medium text-gray-800">{{ car.year }} {{ car.make }} {{ car.model }}</p>
+                                    <p class="text-sm text-gray-500">{{ car.vehicle_type }} • 
+                                        {% if car.status == 'active' %}
+                                            <span class="text-green-500">Active</span>
+                                        {% else %}
+                                            <span class="text-gray-600">Past</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-gray-500 text-center py-4">No vehicles yet</p>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
             
-            <div class="bg-white p-6 rounded-lg shadow text-center">
-                <div class="text-3xl font-bold text-green-600">{{ cars|selectattr('status', 'equalto', 'active')|list|length if cars else 0 }}</div>
-                <div class="text-gray-600">Active</div>
+            <!-- Active Vehicles Card -->
+            <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105">
+                <div class="bg-white p-6 rounded-lg shadow text-center">
+                    <div class="text-3xl font-bold text-gray-600">{{ cars|selectattr('status', 'equalto', 'active')|list|length if cars else 0 }}</div>
+                    <div class="text-gray-600">Active</div>
+                </div>
+                <!-- Popup -->
+                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 bg-white rounded-lg shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                    <h4 class="font-semibold text-gray-800 mb-3">Current Vehicles</h4>
+                    <div class="space-y-2 max-h-48 overflow-y-auto">
+                        {% set active_cars = cars|selectattr('status', 'equalto', 'active')|list %}
+                        {% if active_cars %}
+                            {% for car in active_cars %}
+                            <a href="{{ url_for('car_detail', car_id=car.id) }}" class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded text-gray-800 no-underline">
+                                {% if car.image_path %}
+                                <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" 
+                                    alt="{{ car.make }} {{ car.model }}" 
+                                    class="w-10 h-10 object-cover rounded">
+                                {% else %}
+                                <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
+                                    <i class="fas fa-car text-gray-400 text-sm"></i>
+                                </div>
+                                {% endif %}
+                                <div class="flex-1">
+                                    <p class="font-medium text-gray-800">{{ car.year }} {{ car.make }} {{ car.model }}</p>
+                                    <p class="text-sm text-gray-500">{{ car.vehicle_type }}{% if car.miles %} • {{ car.miles }} miles{% endif %}</p>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-gray-500 text-center py-4">No active vehicles</p>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
             
-            <div class="bg-white p-6 rounded-lg shadow text-center">
-                <div class="text-3xl font-bold text-gray-600">{{ cars|selectattr('status', 'equalto', 'past')|list|length if cars else 0 }}</div>
-                <div class="text-gray-600">Past Vehicles</div>
+            <!-- Past Vehicles Card -->
+            <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105">
+                <div class="bg-white p-6 rounded-lg shadow text-center">
+                    <div class="text-3xl font-bold text-red-600">{{ cars|selectattr('status', 'equalto', 'past')|list|length if cars else 0 }}</div>
+                    <div class="text-gray-600">Past Vehicles</div>
+                </div>
+                <!-- Popup -->
+                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 bg-white rounded-lg shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                    <h4 class="font-semibold text-gray-800 mb-3">Previous Vehicles</h4>
+                    <div class="space-y-2 max-h-48 overflow-y-auto">
+                        {% set past_cars = cars|selectattr('status', 'equalto', 'past')|list %}
+                        {% if past_cars %}
+                            {% for car in past_cars %}
+                            <a href="{{ url_for('car_detail', car_id=car.id) }}" class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded text-gray-800 no-underline">
+                                {% if car.image_path %}
+                                <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" 
+                                    alt="{{ car.make }} {{ car.model }}" 
+                                    class="w-10 h-10 object-cover rounded">
+                                {% else %}
+                                <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
+                                    <i class="fas fa-car text-gray-400 text-sm"></i>
+                                </div>
+                                {% endif %}
+                                <div class="flex-1">
+                                    <p class="font-medium text-gray-800">{{ car.year }} {{ car.make }} {{ car.model }}</p>
+                                    <p class="text-sm text-gray-500">{{ car.vehicle_type }}{% if car.reason %} • {{ car.reason }}{% endif %}</p>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-gray-500 text-center py-4">No past vehicles</p>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
             
-            <div class="bg-white p-6 rounded-lg shadow text-center">
-                <div class="text-3xl font-bold text-purple-600">🔧</div>
-                <div class="text-gray-600">Services Tracked</div>
+            <!-- Services Tracked Card -->
+            <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105">
+                <div class="bg-white p-6 rounded-lg shadow text-center">
+                    <div class="text-3xl font-bold text-purple-600">🔧</div>
+                    <div class="text-gray-600">Services Tracked</div>
+                </div>
+                <!-- Popup -->
+                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 bg-white rounded-lg shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                    <h4 class="font-semibold text-gray-800 mb-3">Service Tracking</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-wrench text-blue-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-800">Maintenance Records</p>
+                                <p class="text-sm text-gray-500">Track all services and repairs</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-cog text-green-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-800">Aftermarket Parts</p>
+                                <p class="text-sm text-gray-500">Monitor modifications and upgrades</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-calendar text-purple-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-800">Service Schedules</p>
+                                <p class="text-sm text-gray-500">Never miss important intervals</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t">
+                        <p class="text-xs text-gray-500 text-center">Click on any vehicle to see detailed service history</p>
+                    </div>
+                </div>
             </div>
         </div>
         
         <div class="text-center mt-8">
-            <a href="{{ url_for('adv_garage') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded transition-colors">
+            <a href="{{ url_for('adv_garage') }}" class="bg-racing-red hover:bg-racing-red-dark text-white font-bold py-4 px-8 rounded transition-colors">
                 View Detailed Garage
             </a>
         </div>

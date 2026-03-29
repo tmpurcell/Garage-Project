@@ -4,6 +4,16 @@
 {% block content %}
 
 <style>
+
+    body {
+        background:
+            radial-gradient(circle at 15% 20%, rgba(220,38,38,.08), transparent 40%),
+            radial-gradient(circle at 85% 25%, rgba(234,88,12,.08), transparent 40%),
+            radial-gradient(circle at 50% 80%, rgba(30,64,175,.08), transparent 40%),
+            linear-gradient(135deg, #f8fafc 0%, #e5e7eb 100%);
+        background-attachment: fixed;
+        min-height: 100vh;
+    }
     .modal-overlay {
         display: none;
         position: fixed;
@@ -135,6 +145,168 @@
         }
     }
 
+    .features-section {
+        position: relative;
+        padding: 5rem 1rem;
+    }
+
+    .feature-card:nth-child(1) { transition-delay: 0s; }
+    .feature-card:nth-child(2) { transition-delay: .05s; }
+    .feature-card:nth-child(3) { transition-delay: .1s; }
+
+    .feature-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.9) 100%);
+        border-radius: 1rem;
+        padding: 2rem 1.75rem;
+        text-align: center;
+        box-shadow: 0 10px 25px rgba(0,0,0,.08);
+        transition: transform .25s ease, box-shadow .25s ease;
+        border: 1px solid rgba(229, 231, 235, 0.3);
+        position: relative;
+        overflow: visible;
+        backdrop-filter: blur(2px);
+    }
+
+    .feature-card .absolute {
+        transition: opacity 0.3s ease;
+    }
+
+    .feature-card:hover .absolute {
+        opacity: 0.4 !important;
+    }
+
+    .feature-popup {
+        position: fixed;
+        bottom: calc(100% + 1rem);
+        left: 50%;
+        transform: translateX(-50%) translateY(10px);
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(229, 231, 235, 0.5);
+        padding: 1.5rem;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+        z-index: 1000;
+        width: 400px;
+        max-width: 90vw;
+        pointer-events: auto;
+    }
+
+    .feature-card:hover .feature-popup {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .feature-popup img {
+        width: 100%;
+        height: auto;
+        border-radius: 0.75rem;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(229, 231, 235, 0.3);
+    }
+
+    .feature-popup-title {
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+        font-size: 1.125rem;
+        line-height: 1.3;
+    }
+
+    .feature-popup-desc {
+        color: #4b5563;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        font-weight: 400;
+    }
+
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--accent-color, #3B82F6) 0%, var(--accent-color-light, #60A5FA) 100%);
+    }
+
+    .feature-card:nth-child(1) { --accent-color: #F59E0B; --accent-color-light: #FCD34D; }
+    .feature-card:nth-child(2) { --accent-color: #111827; --accent-color-light: #374151; }
+    .feature-card:nth-child(3) { --accent-color: #DC2626; --accent-color-light: #EF4444; }
+
+    .feature-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 20px 40px rgba(0,0,0,.15);
+    }
+
+    .feature-icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 1rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        transition: transform .25s ease, box-shadow .25s ease;
+    }
+
+    .feature-card:hover .feature-icon {
+        transform: scale(1.15) rotate(-6deg);
+        box-shadow: 0 10px 20px rgba(0,0,0,.2);
+    }
+
+    .hero-bg {
+        padding: 5rem 1rem;
+        margin-bottom: 4rem;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(229, 231, 235, 0.8) 100%);
+        backdrop-filter: blur(10px);
+        border-radius: 1.25rem;
+        border: 1px solid rgba(220, 38, 38, 0.1);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-bg::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, transparent 30%, rgba(220, 38, 38, 0.03) 50%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .demo-bg {
+    padding: 5rem 1rem;
+    margin-bottom: 4rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(229, 231, 235, 0.85) 100%);
+    backdrop-filter: blur(10px);
+    border-radius: 1.25rem;
+    border: 1px solid rgba(30, 64, 175, 0.1);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    position: relative;
+    overflow: hidden;
+}
+
+.demo-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(30, 64, 175, 0.03) 50%, transparent 70%);
+    pointer-events: none;
+}
+
+
+
     @keyframes garageInteriorFade {
         to { opacity: 1; }
     }
@@ -150,20 +322,27 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <!-- Hero Section -->
-<div class="text-center py-12">
-    <h1 class="text-4xl font-bold text-gray-900 mb-4">Welcome to Your Digital Garage 🏁</h1>
-    <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-        Track, maintain, and manage your vehicle collection with ease. Keep detailed records of maintenance, 
-        aftermarket parts, and scheduled services all in one place.
-    </p>
+<div class="hero-bg text-center py-20 relative">
+    <!-- Background Image -->
+    <div class="absolute inset-0 opacity-50">
+        <img src="/static/images/LexusIntegra.png" alt="Showroom Car" class="w-full h-full object-cover rounded-1.25rem">
+    </div>
     
-    <div class="space-x-4">
-        <button onclick="openRegisterModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors">
-            Get Started
-        </button>
-        <button onclick="openLoginModal()" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors">
-            Login
-        </button>
+    <div class="relative z-10">
+        <h1 class="text-6xl font-bold text-black-900 mb-4 tracking-wide">Welcome to Your Digital Garage 🏁</h1>
+        <p class="text-2xl text-gray-800 mb-8 max-w-3xl mx-auto tracking-wide font-medium">
+            Track, maintain, and manage your vehicle collection with ease. Keep detailed records of maintenance, 
+            aftermarket parts, and scheduled services all in one place.
+        </p>
+        
+        <div class="space-x-4">
+            <button onclick="openRegisterModal()" class="bg-racing-red hover:bg-racing-red-dark text-white font-bold py-3 px-6 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                Get Started
+            </button>
+            <button onclick="openLoginModal()" class="bg-garage-gray hover:bg-garage-gray-dark text-white font-bold py-3 px-6 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                Login
+            </button>
+        </div>
     </div>
 </div>
 
@@ -187,48 +366,96 @@
 </div>
 
 <!-- Features Section -->
-<div class="py-12">
+<div class="features-section" style="overflow: visible;">
     <h2 class="text-3xl font-bold text-center text-gray-900 mb-12">Everything You Need for Vehicle Management</h2>
     
-    <div class="flex flex-col md:flex-row justify-center items-center gap-8 md:gap-16">
+    <div class="flex flex-col md:flex-row justify-center items-center gap-8 md:gap-16" style="overflow: visible;">
         <!-- Feature 1 -->
-        <div class="text-center flex-1 max-w-xs">
-            <div class="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-wrench text-blue-600 text-2xl"></i>
+        <div class="feature-card relative overflow-hidden">
+            <!-- Background Image -->
+            <div class="absolute inset-0 opacity-10">
+                <img src="/static/images/checkEngine.png" alt="Engine Maintenance" class="w-full h-full object-cover">
             </div>
-            <h3 class="text-lg font-semibold mb-2">Maintenance Tracking</h3>
-            <p class="text-gray-600 text-sm">Keep detailed records of all maintenance services, costs, and service providers.</p>
+            
+            <div class="relative z-10">
+                <div class="feature-icon bg-yellow-500 text-white">
+                    <i class="fas fa-wrench"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-2">Maintenance Tracking</h3>
+                <p class="text-gray-600 text-sm">Keep detailed records of all maintenance services, costs, and service providers.</p>
+            </div>
+            
+            <!-- Hover Popup -->
+            <div class="feature-popup">
+                <img src="/static/images/maintenance.png" alt="Maintenance Tracking Example">
+                <div class="feature-popup-title">Maintenance Dashboard</div>
+                <div class="feature-popup-desc">Track oil changes, repairs, and service history with detailed records and costs.</div>
+            </div>
         </div>
         
         <!-- Feature 2 -->
-        <div class="text-center flex-1 max-w-xs">
-            <div class="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-cog text-green-600 text-2xl"></i>
+        <div class="feature-card relative overflow-hidden">
+            <!-- Background Image -->
+            <div class="absolute inset-0 opacity-10">
+                <img src="/static/images/carParts.png" alt="Performance Parts" class="w-full h-full object-cover">
             </div>
-            <h3 class="text-lg font-semibold mb-2">Aftermarket Parts</h3>
-            <p class="text-gray-600 text-sm">Track installed modifications, costs, and installation dates for all your upgrades.</p>
+            
+            <div class="relative z-10">
+                <div class="feature-icon bg-black text-white">
+                    <i class="fas fa-tachometer-alt"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-2">Aftermarket Parts</h3>
+                <p class="text-gray-600 text-sm">Track installed modifications, costs, and installation dates for all your upgrades.</p>
+            </div>
+            
+            <!-- Hover Popup -->
+            <div class="feature-popup">
+                <img src="/static/images/aftermarket.png" alt="Aftermarket Parts Example">
+                <div class="feature-popup-title">Parts Management</div>
+                <div class="feature-popup-desc">Document performance upgrades, modifications, and aftermarket installations.</div>
+            </div>
         </div>
         
         <!-- Feature 3 -->
-        <div class="text-center flex-1 max-w-xs">
-            <div class="bg-purple-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
-                <i class="fas fa-calendar text-purple-600 text-2xl"></i>
+        <div class="feature-card relative overflow-hidden">
+            <!-- Background Image -->
+            <div class="absolute inset-0 opacity-10">
+                <img src="/static/images/calendar.png" alt="Service Calendar" class="w-full h-full object-cover">
             </div>
-            <h3 class="text-lg font-semibold mb-2">Scheduled Maintenance</h3>
-            <p class="text-gray-600 text-sm">Never miss service intervals with automated reminders and scheduling.</p>
+            
+            <div class="relative z-10">
+                <div class="feature-icon bg-red-600 text-white">
+                    <i class="fas fa-calendar"></i>
+                </div>
+                <h3 class="text-lg font-semibold mb-2">Scheduled Maintenance</h3>
+                <p class="text-gray-600 text-sm">Never miss service intervals with automated reminders and scheduling.</p>
+            </div>
+            
+            <!-- Hover Popup -->
+            <div class="feature-popup">
+                <img src="/static/images/scheduleMain.png" alt="Scheduled Maintenance Example">
+                <div class="feature-popup-title">Service Scheduler</div>
+                <div class="feature-popup-desc">Set up maintenance reminders and never miss an important service date.</div>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Demo Section -->
-<div class="py-12 bg-gray-50 rounded-lg">
-    <h2 class="text-2xl font-bold text-center text-gray-900 mb-8">See It In Action</h2>
+<div class="demo-bg py-12 bg-gray-50 rounded-lg relative overflow-hidden">
+    <!-- Background Image -->
+    <div class="absolute inset-0 opacity-50">
+        <img src="/static/images/carStats.png" alt="Garage Background" class="w-full h-full">
+    </div>
+    
+    <div class="relative z-10">
+        <h2 class="text-6xl font-bold text-center text-gray-900 mb-8 tracking-wide">Real Time Stats</h2>
     
     <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         <!-- Demo Card 1 -->
         <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="bg-blue-100 rounded-lg w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-car text-blue-600 text-4xl"></i>
+            <div class="bg-yellow-500 rounded-lg w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-car text-white text-4xl"></i>
             </div>
             <h3 class="text-lg font-semibold mb-2">Track Everything</h3>
             <p class="text-gray-600 text-sm">Keep comprehensive records of all your vehicles in one organized system.</p>
@@ -236,8 +463,8 @@
         
         <!-- Demo Card 2 -->
         <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="bg-green-100 rounded-lg w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-tools text-green-600 text-4xl"></i>
+            <div class="bg-gray-900 rounded-lg w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-tools text-white text-4xl"></i>
             </div>
             <h3 class="text-lg font-semibold mb-2">Never Forget Maintenance</h3>
             <p class="text-gray-600 text-sm">Get automated reminders for oil changes, tire rotations, and more.</p>
@@ -245,8 +472,8 @@
         
         <!-- Demo Card 3 -->
         <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="bg-purple-100 rounded-lg w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-images text-purple-600 text-4xl"></i>
+            <div class="bg-red-600 rounded-lg w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-images text-white text-4xl"></i>
             </div>
             <h3 class="text-lg font-semibold mb-2">Visual History</h3>
             <p class="text-gray-600 text-sm">See photos and records of all your past and current vehicles.</p>
@@ -254,9 +481,10 @@
     </div>
     
     <div class="text-center mt-8">
-        <button onclick="openRegisterModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors">
+        <button onclick="openRegisterModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-lg text-xl transition-colors transform hover:scale-105">
             Start Your Free Garage Today
         </button>
+    </div>
     </div>
 </div>
 
@@ -269,7 +497,7 @@
             <h2 class="text-2xl font-bold text-gray-900">Sign in to your account</h2>
             <p class="mt-2 text-sm text-gray-600">
                 Or
-                <a href="{{ url_for('register') }}" class="font-medium text-blue-600 hover:text-blue-500">
+                <a href="#" onclick="openRegisterModal()" class="font-medium text-blue-600 hover:text-blue-500">
                     create a new account
                 </a>
             </p>
@@ -353,7 +581,7 @@
             </div>
         </div>
         
-        <form action="{{ url_for('register') }}" method="POST" class="mt-6 space-y-6">
+        <form action="{{ url_for('api_register') }}" method="POST" class="mt-6 space-y-6" id="registerForm">
             <div class="space-y-4">
                 <!-- First Name -->
                 <div>
@@ -592,6 +820,52 @@ function showGarageDoorAnimation() {
         window.location.href = '/cars';
     }, 2000);
 }
+
+// Form submission validation and handling
+document.querySelector('#registerForm')?.addEventListener('submit', function(e) {
+    e.preventDefault(); // Prevent normal form submission
+    
+    const password = document.getElementById('modal_password').value;
+    const confirmPassword = document.getElementById('modal_confirm_password').value;
+    
+    const requirements = {
+        'modal_req-length': password.length >= 8,
+        'modal_req-uppercase': /[A-Z]/.test(password),
+        'modal_req-lowercase': /[a-z]/.test(password),
+        'modal_req-number': /\d/.test(password),
+        'modal_req-special': /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password)
+    };
+    
+    const allRequirementsMet = Object.values(requirements).every(req => req === true);
+    
+    if (!allRequirementsMet) {
+        alert('Please meet all password requirements before submitting.');
+        return false;
+    }
+    
+    if (password !== confirmPassword) {
+        alert('Passwords do not match. Please make sure both passwords are the same.');
+        return false;
+    }
+    
+    // Submit form via fetch
+    fetch(this.action, {
+        method: 'POST',
+        body: new FormData(this)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = data.redirect;
+        } else {
+            alert(data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    });
+});
 
 </script>
 
