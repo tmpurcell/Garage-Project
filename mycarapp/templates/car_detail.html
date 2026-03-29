@@ -21,7 +21,7 @@
         </div>
         
         <!-- Car Details -->
-        <div class="flex-1">    
+        <div class="flex-1 relative">    
             <div class="flex items-start justify-between">
                 <div>
                     <h1 class="text-4xl font-bold text-gray-800">{{ car['year'] }} {{ car['make'] }} {{ car['model'] }}</h1>
@@ -34,17 +34,23 @@
                         </p>
                     {% endif %}
                     {% if car['vehicle_type'] == 'Boat' %}
-                        {% if car['purchase_hours'] %}
-                            <p class="text-lg text-gray-600">
-                                Hours When Purchased: {{ car['purchase_hours'] }}
-                            </p>
+                        {% if car['hours'] %}
+                            <h2 class="text-xl font-semibold text-gray-600">Current Hours: {{ car['hours'] }}</h2>
                         {% endif %}
                     {% else %}
-                        {% if car['purchase_mileage'] %}
-                            <p class="text-lg text-gray-600">
-                                Miles When Purchased: {{ car['purchase_mileage'] }}
-                            </p>
+                        {% if car['miles'] %}
+                            <h2 class="text-xl font-semibold text-gray-600">Current Miles: {{ car['miles'] }}</h2>
                         {% endif %}
+                    {% endif %}
+                    {% if car['purchase_hours'] %}
+                        <p class="text-lg text-gray-600">
+                            Hours When Purchased: {{ car['purchase_hours'] }}
+                        </p>
+                    {% endif %}
+                    {% if car['purchase_mileage'] %}
+                        <p class="text-lg text-gray-600">
+                            Miles When Purchased: {{ car['purchase_mileage'] }}
+                        </p>
                     {% endif %}
                     {% if car['sell_date'] %}
                         <p class="text-lg text-gray-600">
@@ -56,32 +62,25 @@
                             {% if car['reason'] == 'Sold' %}Miles at Time of Sale{% elif car['reason'] == 'Crashed/Totaled' %}Miles at Time of Crash{% elif car['reason'] == 'Engine Blew Up' or car['reason'] == 'Transmission Failed' %}Miles at Time of Failure{% elif car['reason'] == 'Traded In' %}Miles at Time of Trade-In{% elif car['reason'] == 'Stolen' %}Miles at Time of Theft{% elif car['reason'] == 'Too Expensive to Repair' %}Miles at Time of Decision{% else %}Miles at Time of Event{% endif %}: {{ car['sold_mileage'] }}
                         </p>
                     {% endif %}
-                    {% if car['vehicle_type'] == 'Boat' %}
-                        {% if car['hours'] %}
-                            <h2 class="text-xl font-semibold text-gray-600">Current Hours: {{ car['hours'] }}</h2>
-                        {% endif %}
-                    {% else %}
-                        {% if car['miles'] %}
-                            <h2 class="text-xl font-semibold text-gray-600">Current Miles: {{ car['miles'] }}</h2>
-                        {% endif %}
+                </div>
+                <div class="flex flex-col gap-2">
+                    <button onclick="openEditModal()" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        Edit
+                    </button>
+                    {% if car['status'] == 'active' %}
+                        <button onclick="openStatusModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow-lg hover:shadow-xl transform hover:scale-105">
+                            Remove From Garage
+                        </button>
                     {% endif %}
                 </div>
-                <!-- No Longer In Garage Button -->
-                {% if car['status'] == 'active' %}
-                    <button onclick="openStatusModal()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded">
-                        Mark as No Longer in Garage
-                    </button>
-                {% endif %}
-                <button onclick="openEditModal()" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                    Edit
-                </button>
             </div>
         </div>
     </div>
-</div>
+
+    </div>
 
 <!-- Edit Car Modal -->
 <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -98,7 +97,6 @@
         </div>
         
         <div class="flex-1 overflow-y-auto p-6">
-            
             <form action="{{ url_for('edit_car', car_id=car['id']) }}" method="POST" enctype="multipart/form-data" class="space-y-4" id="editCarForm">
                 <div>
                     <label class="block font-medium mb-1">Make *</label>
@@ -178,7 +176,8 @@
                 </button>
             </div>
             
-<form action="{{ url_for('add_maintenance', car_id=car['id']) }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-2 gap-4">                <div>
+            <form action="{{ url_for('add_maintenance', car_id=car['id']) }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-2 gap-4">
+                <div>
                     <label class="block font-medium mb-1">Date *</label>
                     <input type="date" name="date" class="border p-2 w-full rounded" required>
                 </div>
@@ -274,9 +273,9 @@
                 <div class="col-span-2">
                     <label class="block font-medium mb-1">Receipt Image (optional)</label>
                     <div class="drag-drop-area" id="edit-maintenance-drop-zone" 
-                         ondrop="handleDrop(event, 'edit_maint_receipt_image')" 
-                         ondragover="handleDragOver(event)" 
-                         ondragleave="handleDragLeave(event)">
+                        ondrop="handleDrop(event, 'edit_maint_receipt_image')" 
+                        ondragover="handleDragOver(event)" 
+                        ondragleave="handleDragLeave(event)">
                         <div class="drag-drop-content">
                             <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
@@ -318,12 +317,14 @@
 <div id="content-maintenance" class="tab-content">
     <div class="flex justify-between items-center mb-6">
         <h3 class="text-xl font-bold">Maintenance History</h3>
-        <button onclick="openAddMaintenanceModal()" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Maintenance Record
-        </button>
+        <div class="flex gap-2">
+            <button onclick="openAddMaintenanceModal()" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Add Maintenance
+            </button>
+        </div>
     </div>
 
     {% if maintenance %}
@@ -332,20 +333,13 @@
         <div class="bg-white rounded-lg shadow p-5 hover:shadow-md transition">
             <div class="flex justify-between items-start">
                 <div class="flex-1">
-                    <!-- Service Type -->
                     <h4 class="text-lg font-bold text-gray-800">{{ record[4] }}</h4>
-
-                    <!-- Date and Mileage -->
                     <p class="text-gray-600">
                         {{ record[2] }}{% if record[3] is not none %} • {{ record[3]|int }} miles{% endif %}
                     </p>
-
-                    <!-- Description -->
                     {% if record[5] %}
                     <p class="text-gray-700 mt-2 text-sm">{{ record[5] }}</p>
                     {% endif %}
-
-                    <!-- Shop & Cost -->
                     <div class="mt-2 text-sm text-gray-600">
                         {% if record[7] == 'Self' %}
                             🛠️ Self Service{% if record[6] is not none %} • 💰 ${{ "%.2f"|format(record[6]|float) }}{% endif %}
@@ -355,8 +349,6 @@
                             💰 ${{ "%.2f"|format(record[6]|float) }}
                         {% endif %}
                     </div>
-
-                    <!-- Receipt Image -->
                     {% if record[8] %}
                     <div class="mt-3">
                         <a href="{{ url_for('uploaded_file', filename=record[8]) }}" target="_blank" 
@@ -369,8 +361,6 @@
                     </div>
                     {% endif %}
                 </div>
-
-                <!-- Edit / Delete Buttons -->
                 <div class="flex gap-2 ml-4">
                     <button class="edit-maintenance-btn text-gray-600 hover:text-gray-800"
                             title="Edit record"
@@ -404,19 +394,6 @@
     <p class="text-gray-600 text-center py-8">No maintenance records added yet. Click the button above to add your first record!</p>
     {% endif %}
 </div>
-
-
-<!-- Aftermarket Parts Tab -->
-<div id="content-parts" class="tab-content hidden">
-    <div class="flex justify-between items-center mb-6">
-        <h3 class="text-xl font-bold">Installed Parts</h3>
-        <button onclick="openAddPartModal()" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Aftermarket Parts
-        </button>
-    </div>
     
     {% if parts %}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -512,9 +489,9 @@
                 <div>
                     <label class="block font-medium mb-1">Receipt Image (optional)</label>
                     <div class="drag-drop-area" id="add-part-drop-zone" 
-                         ondrop="handleDrop(event, 'add_part_receipt_image')" 
-                         ondragover="handleDragOver(event)" 
-                         ondragleave="handleDragLeave(event)">
+                        ondrop="handleDrop(event, 'add_part_receipt_image')" 
+                        ondragover="handleDragOver(event)" 
+                        ondragleave="handleDragLeave(event)">
                         <div class="drag-drop-content">
                             <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
@@ -581,12 +558,25 @@
 <div id="content-scheduled" class="tab-content hidden">
     <div class="flex justify-between items-center mb-6">
         <h3 class="text-xl font-bold">Upcoming Maintenance</h3>
-        <button onclick="openAddScheduledModal()" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Schedule Maintenance
-        </button>
+        <div class="flex gap-2">
+            <button onclick="openAddScheduledModal()" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Schedule Maintenance
+            </button>
+            <button onclick="openEditModal()" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+                Edit
+            </button>
+            {% if car['status'] == 'active' %}
+                <button onclick="openStatusModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                    Remove From Garage
+                </button>
+            {% endif %}
+        </div>
     </div>
 
     {% if scheduled %}
@@ -634,7 +624,6 @@
     <p class="text-gray-600 text-center py-8">No scheduled maintenance yet. Click the button above to add your first item!</p>
     {% endif %}
 </div>
-
 
 <!-- Add Scheduled Maintenance Modal -->
 <div id="addScheduledModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -720,7 +709,7 @@
                     <p class="text-sm text-gray-500 mt-1">Record when this event occurred</p>
                 </div>
                 <div class="flex gap-3 pt-4">
-                    <button type="submit" class="flex-1 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">Mark as Past</button>
+                    <button type="submit" class="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Mark as Past</button>
                     <button type="button" onclick="closeStatusModal()" class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
                 </div>
             </form>
@@ -729,29 +718,22 @@
 </div>
 
 <script>
-    // Save active tab to localStorage
     function saveActiveTab(tabName) {
         localStorage.setItem('activeTab', tabName);
     }
 
     function showTab(tabName) {
-        // Hide all tab contents
         document.querySelectorAll('.tab-content').forEach(content => {
             content.classList.add('hidden');
         });
-        
-        // Remove active styling from all tabs
         document.querySelectorAll('.tab-button').forEach(button => {
             button.classList.remove('border-gray-700', 'text-gray-700');
             button.classList.add('border-transparent', 'text-gray-500');
         });
-        
-        // Show selected tab content
         const content = document.getElementById('content-' + tabName);
         if (content) {
             content.classList.remove('hidden');
         } else {
-            // If the requested tab doesn't exist, find and show the first available tab
             const availableTabs = ['maintenance', 'parts', 'scheduled'];
             for (const tab of availableTabs) {
                 const tabContent = document.getElementById('content-' + tab);
@@ -763,8 +745,6 @@
             }
             return;
         }
-        
-        // Add active styling to selected tab
         const activeTab = document.getElementById('tab-' + tabName);
         if (activeTab) {
             activeTab.classList.remove('border-transparent', 'text-gray-500');
@@ -773,24 +753,18 @@
         }
     }
 
-    // Initialize tabs when the page loads
     document.addEventListener('DOMContentLoaded', function() {
-        // Add click handlers to all tab buttons
         document.querySelectorAll('.tab-button').forEach(button => {
             button.addEventListener('click', function() {
                 const tabName = this.id.replace('tab-', '');
                 showTab(tabName);
             });
         });
-        
-        // Restore the active tab from localStorage, or show first available
         const savedTab = localStorage.getItem('activeTab');
         const savedTabButton = document.getElementById('tab-' + savedTab);
-        
         if (savedTabButton) {
             showTab(savedTab);
         } else {
-            // Show the first available tab
             const availableTabs = ['maintenance', 'parts', 'scheduled'];
             for (const tab of availableTabs) {
                 const tabButton = document.getElementById('tab-' + tab);
@@ -803,16 +777,11 @@
     });
 
     function toggleHoursField() {
-
         const vehicleSelect = document.getElementById('vehicle-type');
-        if (!vehicleSelect) {
-            return;
-        }
-        
+        if (!vehicleSelect) return;
         const vehicleType = vehicleSelect.value;
         const hoursField = document.getElementById('hours-field');
         const milesField = document.getElementById('miles-field');
-        
         if (vehicleType === 'Boat') {
             hoursField.style.display = 'block';
             milesField.style.display = 'none';
@@ -822,31 +791,23 @@
         }
     }
 
-    // Add event listener to vehicle type select
     document.addEventListener('DOMContentLoaded', function() {
         const vehicleSelect = document.querySelector('select[name="vehicle_type"]');
         if (vehicleSelect) {
             vehicleSelect.addEventListener('change', toggleHoursField);
-            
-            // Instead, call it when the edit modal opens
             const editButton = document.querySelector('[onclick="openEditModal()"]');
             if (editButton) {
                 editButton.addEventListener('click', function() {
-                    setTimeout(function() {
-                        toggleHoursField();
-                    }, 350); // Increased from 100ms to 350ms
+                    setTimeout(toggleHoursField, 350);
                 });
             }
         }
     });
 
-    // Car Edit Modal functions
     function openEditModal() {
         document.getElementById('editModal').classList.remove('hidden');
         document.body.style.overflow = 'hidden';
-        setTimeout(function() {
-            toggleHoursField();
-        }, 300);
+        setTimeout(toggleHoursField, 300);
     }
 
     function closeEditModal() {
@@ -854,12 +815,9 @@
     }
 
     document.getElementById('editModal')?.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeEditModal();
-        }
+        if (e.target === this) closeEditModal();
     });
 
-    // Add Part Modal functions
     function openAddPartModal() {
         document.getElementById('addPartModal').classList.remove('hidden');
     }
@@ -869,44 +827,31 @@
     }
 
     document.getElementById('addPartModal')?.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeAddPartModal();
-        }
+        if (e.target === this) closeAddPartModal();
     });
 
-    // Edit Part Modal functions
     function closeEditPartModal() {
         document.getElementById('editPartModal').classList.add('hidden');
     }
 
     document.getElementById('editPartModal')?.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeEditPartModal();
-        }
+        if (e.target === this) closeEditPartModal();
     });
 
-    // Event delegation for edit part buttons
     document.addEventListener('click', function(e) {
         const editBtn = e.target.closest('.edit-part-btn');
         if (editBtn) {
             const partId = editBtn.dataset.partId;
-            const partName = editBtn.dataset.partName;
-            const brand = editBtn.dataset.brand;
-            const installDate = editBtn.dataset.installDate;
-            const cost = editBtn.dataset.cost;
-            const notes = editBtn.dataset.notes;
-            
             document.getElementById('editPartForm').action = `/car/{{ car[0] }}/edit_part/${partId}`;
-            document.getElementById('edit_part_name').value = partName;
-            document.getElementById('edit_brand').value = brand;
-            document.getElementById('edit_install_date').value = installDate;
-            document.getElementById('edit_cost').value = cost;
-            document.getElementById('edit_notes').value = notes;
+            document.getElementById('edit_part_name').value = editBtn.dataset.partName;
+            document.getElementById('edit_brand').value = editBtn.dataset.brand;
+            document.getElementById('edit_install_date').value = editBtn.dataset.installDate;
+            document.getElementById('edit_cost').value = editBtn.dataset.cost;
+            document.getElementById('edit_notes').value = editBtn.dataset.notes;
             document.getElementById('editPartModal').classList.remove('hidden');
         }
     });
 
-    // Maintenance Modal functions
     function openAddMaintenanceModal() {
         document.getElementById('addMaintenanceModal').classList.remove('hidden');
     }
@@ -916,9 +861,7 @@
     }
 
     document.getElementById('addMaintenanceModal')?.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeAddMaintenanceModal();
-        }
+        if (e.target === this) closeAddMaintenanceModal();
     });
 
     function closeEditMaintenanceModal() {
@@ -926,33 +869,21 @@
     }
 
     document.getElementById('editMaintenanceModal')?.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeEditMaintenanceModal();
-        }
+        if (e.target === this) closeEditMaintenanceModal();
     });
 
-    // Event delegation for edit maintenance buttons
     document.addEventListener('click', function(e) {
         const editBtn = e.target.closest('.edit-maintenance-btn');
         if (editBtn) {
             const recordId = editBtn.dataset.recordId;
-            const date = editBtn.dataset.date;
-            const mileage = editBtn.dataset.mileage;
-            const serviceType = editBtn.dataset.serviceType;
-            const description = editBtn.dataset.description;
-            const cost = editBtn.dataset.cost;
-            const shopName = editBtn.dataset.shopName;
             const receiptImage = editBtn.dataset.receiptImage;
-            
             document.getElementById('editMaintenanceForm').action = `/car/{{ car[0] }}/edit_maintenance/${recordId}`;
-            document.getElementById('edit_maint_date').value = date;
-            document.getElementById('edit_maint_mileage').value = mileage;
-            document.getElementById('edit_maint_service_type').value = serviceType;
-            document.getElementById('edit_maint_description').value = description;
-            document.getElementById('edit_maint_cost').value = cost;
-            document.getElementById('edit_maint_shop_name').value = shopName;
-            
-            // Handle receipt display
+            document.getElementById('edit_maint_date').value = editBtn.dataset.date;
+            document.getElementById('edit_maint_mileage').value = editBtn.dataset.mileage;
+            document.getElementById('edit_maint_service_type').value = editBtn.dataset.serviceType;
+            document.getElementById('edit_maint_description').value = editBtn.dataset.description;
+            document.getElementById('edit_maint_cost').value = editBtn.dataset.cost;
+            document.getElementById('edit_maint_shop_name').value = editBtn.dataset.shopName;
             const currentReceiptDiv = document.getElementById('current-receipt');
             if (receiptImage) {
                 currentReceiptDiv.classList.remove('hidden');
@@ -962,12 +893,10 @@
             } else {
                 currentReceiptDiv.classList.add('hidden');
             }
-            
             document.getElementById('editMaintenanceModal').classList.remove('hidden');
         }
     });
 
-    // Scheduled Maintenance Modal functions
     function openAddScheduledModal() {
         document.getElementById('addScheduledModal').classList.remove('hidden');
     }
@@ -977,9 +906,7 @@
     }
 
     document.getElementById('addScheduledModal')?.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeAddScheduledModal();
-        }
+        if (e.target === this) closeAddScheduledModal();
     });
 
     function closeEditScheduledModal() {
@@ -987,36 +914,25 @@
     }
 
     document.getElementById('editScheduledModal')?.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeEditScheduledModal();
-        }
+        if (e.target === this) closeEditScheduledModal();
     });
 
-    // Event delegation for edit scheduled buttons
     document.addEventListener('click', function(e) {
         const editBtn = e.target.closest('.edit-scheduled-btn');
         if (editBtn) {
             const scheduledId = editBtn.dataset.scheduledId;
-            const serviceType = editBtn.dataset.serviceType;
-            const dueDate = editBtn.dataset.dueDate;
-            const dueMileage = editBtn.dataset.dueMileage;
-            const reminderEnabled = editBtn.dataset.reminderEnabled;
-            const notes = editBtn.dataset.notes;
-            
             document.getElementById('editScheduledForm').action = `/car/{{ car[0] }}/edit_scheduled/${scheduledId}`;
-            document.getElementById('edit_sched_service_type').value = serviceType;
-            document.getElementById('edit_sched_due_date').value = dueDate;
-            document.getElementById('edit_sched_due_mileage').value = dueMileage;
-            document.getElementById('edit_sched_reminder').checked = (reminderEnabled == '1');
-            document.getElementById('edit_sched_notes').value = notes;
+            document.getElementById('edit_sched_service_type').value = editBtn.dataset.serviceType;
+            document.getElementById('edit_sched_due_date').value = editBtn.dataset.dueDate;
+            document.getElementById('edit_sched_due_mileage').value = editBtn.dataset.dueMileage;
+            document.getElementById('edit_sched_reminder').checked = (editBtn.dataset.reminderEnabled == '1');
+            document.getElementById('edit_sched_notes').value = editBtn.dataset.notes;
             document.getElementById('editScheduledModal').classList.remove('hidden');
         }
     });
 
-    // Status Modal functions
     function openStatusModal() {
         document.getElementById('statusModal').classList.remove('hidden');
-        // Reset the mileage label when opening
         updateMileageLabel();
     }
 
@@ -1029,12 +945,7 @@
         const mileageContext = document.getElementById('mileageContext');
         const dateContext = document.getElementById('dateContext');
         const mileageField = document.getElementById('mileageField');
-        
         if (!reasonSelect || !mileageContext || !dateContext) return;
-        
-        const selectedReason = reasonSelect.value;
-        
-        // Update the label based on the reason
         const contextMap = {
             'Sold': 'Time of Sale',
             'Crashed/Totaled': 'Time of Crash',
@@ -1045,23 +956,54 @@
             'Stolen': 'Time of Theft',
             'Other': 'Time of Event'
         };
-        
-        const context = contextMap[selectedReason] || 'Event';
+        const context = contextMap[reasonSelect.value] || 'Event';
         mileageContext.textContent = context;
         dateContext.textContent = context;
-        
-        // Show/hide mileage field based on reason
-        if (selectedReason === 'Stolen') {
-            mileageField.style.display = 'none';
-        } else {
-            mileageField.style.display = 'block';
-        }
+        mileageField.style.display = reasonSelect.value === 'Stolen' ? 'none' : 'block';
     }
 
     document.getElementById('statusModal')?.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeStatusModal();
-        }
+        if (e.target === this) closeStatusModal();
     });
+
+    // Drag and drop handlers
+    function handleDragOver(event) {
+        event.preventDefault();
+        event.currentTarget.classList.add('drag-over');
+    }
+
+    function handleDragLeave(event) {
+        event.currentTarget.classList.remove('drag-over');
+    }
+
+    function handleDrop(event, inputId) {
+        event.preventDefault();
+        event.currentTarget.classList.remove('drag-over');
+        const file = event.dataTransfer.files[0];
+        if (file) {
+            const input = document.getElementById(inputId);
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            input.files = dataTransfer.files;
+            const label = event.currentTarget.querySelector('p');
+            if (label) label.textContent = `Selected: ${file.name}`;
+        }
+    }
 </script>
+
+<style>
+    .drag-drop-area {
+        border: 2px dashed #d1d5db;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        text-align: center;
+        transition: border-color 0.2s, background-color 0.2s;
+        cursor: pointer;
+    }
+    .drag-drop-area.drag-over {
+        border-color: #6b7280;
+        background-color: #f9fafb;
+    }
+</style>
+
 {% endblock %}
