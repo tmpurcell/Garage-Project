@@ -528,7 +528,7 @@ def cars():
 def add_car():
     if request.method == "POST":
         # Get form data
-        vehicle_type = request.form.get('vehicle_type', 'Car')  # Default to 'Car' if not provided
+        vehicle_type = request.form.get('vehicle_type', 'Car')
         make = request.form.get('make', '').strip()
         model = request.form.get('model', '').strip()
         year = request.form.get('year')
@@ -539,9 +539,19 @@ def add_car():
         vin = request.form.get('vin', '').strip()
         purchase_mileage = request.form.get('purchase_mileage')
         purchase_hours = request.form.get('purchase_hours')
-        
+
+        # Basic validation (applies to all vehicle types)
+        if not all([make, model, year]):
+            flash('Please fill in all required fields', 'error')
+            return redirect(url_for('add_car'))
+
+        try:
+            year = int(year)
+        except ValueError:
+            flash('Please enter a valid year', 'error')
+            return redirect(url_for('add_car'))
+
         if vehicle_type == 'Boat':
-            # Handle hours for boats
             if hours:
                 try:
                     hours = float(hours)
@@ -550,8 +560,7 @@ def add_car():
                     return redirect(url_for('add_car'))
             else:
                 hours = None
-            
-            # Handle purchase hours for boats
+
             if purchase_hours:
                 try:
                     purchase_hours = float(purchase_hours)
@@ -560,24 +569,11 @@ def add_car():
                     return redirect(url_for('add_car'))
             else:
                 purchase_hours = None
-            
-            # Clear mileage fields for boats
+
             miles = None
             purchase_mileage = None
-            
-            # Basic validation for boats
-            if not all([make, model, year]):
-                flash('Please fill in all required fields', 'error')
-                return redirect(url_for('add_car'))
-                
-            try:
-                year = int(year)  # Convert year to integer
-            except ValueError:
-                flash('Please enter a valid year', 'error')
-                return redirect(url_for('add_car'))
-                
+
         else:
-            # Handle purchase mileage for non-boats
             if purchase_mileage:
                 try:
                     purchase_mileage = float(purchase_mileage)
@@ -586,8 +582,7 @@ def add_car():
                     return redirect(url_for('add_car'))
             else:
                 purchase_mileage = None
-            
-            # Handle current miles for non-boats
+
             if miles:
                 try:
                     miles = float(miles)
@@ -596,8 +591,7 @@ def add_car():
                     return redirect(url_for('add_car'))
             else:
                 miles = None
-            
-            # Clear hours fields for non-boats
+
             hours = None
             purchase_hours = None
 
@@ -607,7 +601,6 @@ def add_car():
             file = request.files['image']
             if file.filename != '' and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
-                # Add timestamp to make filename unique
                 filename = f"{int(time.time())}_{filename}"
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(file_path)
@@ -615,7 +608,7 @@ def add_car():
             elif file.filename != '':
                 flash('Invalid file type. Please upload an image file (PNG, JPG, JPEG, GIF, WEBP)', 'error')
                 return redirect(url_for('add_car'))
-        
+
         # Save to database
         conn = get_db_connection()
         try:
@@ -632,8 +625,9 @@ def add_car():
             return redirect(url_for('add_car'))
         finally:
             conn.close()
-            
-        return render_template("add_car.html")
+
+    # GET request - render the form
+    return render_template("add_car.html")
 
 # Car detail page
 @app.route("/car/<int:car_id>")
