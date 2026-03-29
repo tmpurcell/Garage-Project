@@ -178,7 +178,7 @@
                 </button>
             </div>
             
-<form action="{{ url_for('add_maintenance', car_id=car['id']) }}" method="POST" class="grid grid-cols-2 gap-4">                <div>
+<form action="{{ url_for('add_maintenance', car_id=car['id']) }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-2 gap-4">                <div>
                     <label class="block font-medium mb-1">Date *</label>
                     <input type="date" name="date" class="border p-2 w-full rounded" required>
                 </div>
@@ -205,6 +205,11 @@
                     <label class="block font-medium mb-1">Description</label>
                     <textarea name="description" class="border p-2 w-full rounded" rows="3" placeholder="Additional details..."></textarea>
                 </div>
+                <div class="col-span-2">
+                    <label class="block font-medium mb-1">Receipt Image (optional)</label>
+                    <input type="file" name="receipt_image" accept="image/*" class="border p-2 w-full rounded">
+                    <p class="text-sm text-gray-500 mt-1">Upload a receipt image for this maintenance record</p>
+                </div>
                 <div class="col-span-2 flex gap-3 pt-4">
                     <button type="submit" class="flex-1 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">Add Record</button>
                     <button type="button" onclick="closeAddMaintenanceModal()" class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
@@ -227,7 +232,7 @@
                 </button>
             </div>
             
-            <form id="editMaintenanceForm" method="POST" class="grid grid-cols-2 gap-4">
+            <form id="editMaintenanceForm" method="POST" enctype="multipart/form-data" class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block font-medium mb-1">Date *</label>
                     <input type="date" id="edit_maint_date" name="date" class="border p-2 w-full rounded" required>
@@ -254,6 +259,14 @@
                 <div class="col-span-2">
                     <label class="block font-medium mb-1">Description</label>
                     <textarea id="edit_maint_description" name="description" class="border p-2 w-full rounded" rows="3"></textarea>
+                </div>
+                <div class="col-span-2">
+                    <label class="block font-medium mb-1">Receipt Image (optional)</label>
+                    <input type="file" name="receipt_image" accept="image/*" class="border p-2 w-full rounded">
+                    <p class="text-sm text-gray-500 mt-1">Upload a new receipt image (will replace existing receipt)</p>
+                    <div id="current-receipt" class="mt-2 hidden">
+                        <p class="text-sm text-gray-600">Current receipt: <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">View Current Receipt</a></p>
+                    </div>
                 </div>
                 <div class="col-span-2 flex gap-3 pt-4">
                     <button type="submit" class="flex-1 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">Save Changes</button>
@@ -320,6 +333,19 @@
                             💰 ${{ "%.2f"|format(record[6]|float) }}
                         {% endif %}
                     </div>
+
+                    <!-- Receipt Image -->
+                    {% if record[8] %}
+                    <div class="mt-3">
+                        <a href="{{ url_for('static', filename='uploads/' + record[8]) }}" target="_blank" 
+                           class="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            View Receipt
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- Edit / Delete Buttons -->
@@ -332,7 +358,8 @@
                             data-service-type="{{ record[4] }}"
                             data-description="{{ record[5] or '' }}"
                             data-cost="{{ record[6] or '' }}"
-                            data-shop-name="{{ record[7] or '' }}">
+                            data-shop-name="{{ record[7] or '' }}"
+                            data-receipt-image="{{ record[8] or '' }}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -384,6 +411,17 @@
                     {% if part[6] %}
                     <p class="text-gray-700 mt-2 text-sm">{{ part[6] }}</p>
                     {% endif %}
+                    {% if part[7] %}
+                    <div class="mt-3">
+                        <a href="{{ url_for('static', filename='uploads/' + part[7]) }}" target="_blank" 
+                           class="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            View Receipt
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="flex gap-2 ml-4">
                     <button class="edit-part-btn text-gray-600 hover:text-gray-800"
@@ -428,7 +466,7 @@
                 </button>
             </div>
             
-            <form action="{{ url_for('add_part', car_id=car['id']) }}" method="POST" class="space-y-4">
+            <form action="{{ url_for('add_part', car_id=car['id']) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
                 <div>
                     <label class="block font-medium mb-1">Part Name *</label>
                     <input type="text" name="part_name" class="border p-2 w-full rounded" placeholder="e.g., Cold Air Intake" required>
@@ -448,6 +486,11 @@
                 <div>
                     <label class="block font-medium mb-1">Notes</label>
                     <textarea name="notes" class="border p-2 w-full rounded" rows="3" placeholder="Installation notes, performance gains, etc."></textarea>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Receipt Image (optional)</label>
+                    <input type="file" name="receipt_image" accept="image/*" class="border p-2 w-full rounded">
+                    <p class="text-sm text-gray-500 mt-1">Upload a receipt image for this aftermarket part</p>
                 </div>
                 <div class="flex gap-3 pt-4">
                     <button type="submit" class="flex-1 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">Add Part</button>
@@ -866,6 +909,7 @@
             const description = editBtn.dataset.description;
             const cost = editBtn.dataset.cost;
             const shopName = editBtn.dataset.shopName;
+            const receiptImage = editBtn.dataset.receiptImage;
             
             document.getElementById('editMaintenanceForm').action = `/car/{{ car[0] }}/edit_maintenance/${recordId}`;
             document.getElementById('edit_maint_date').value = date;
@@ -874,6 +918,18 @@
             document.getElementById('edit_maint_description').value = description;
             document.getElementById('edit_maint_cost').value = cost;
             document.getElementById('edit_maint_shop_name').value = shopName;
+            
+            // Handle receipt display
+            const currentReceiptDiv = document.getElementById('current-receipt');
+            if (receiptImage) {
+                currentReceiptDiv.classList.remove('hidden');
+                const receiptLink = currentReceiptDiv.querySelector('a');
+                receiptLink.href = `/static/uploads/${receiptImage}`;
+                receiptLink.textContent = 'View Current Receipt';
+            } else {
+                currentReceiptDiv.classList.add('hidden');
+            }
+            
             document.getElementById('editMaintenanceModal').classList.remove('hidden');
         }
     });

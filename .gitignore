@@ -4,3 +4,7 @@ mycarapp/venv/
 # Python cache files
 __pycache__/
 *.pyc
+
+# db files
+cars.db
+mygarage.db

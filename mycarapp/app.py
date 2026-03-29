@@ -59,7 +59,6 @@ def init_db():
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             )
         ''')
-        # Create users table
         c.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -110,42 +109,68 @@ def init_db():
                 FOREIGN KEY (car_id) REFERENCES cars (id) ON DELETE CASCADE
             )
         ''')
-        # Add hours column for boats
-        try:
-            c.execute("ALTER TABLE cars ADD COLUMN hours REAL")
-        except sqlite3.OperationalError:
-            pass  # Column already exists
-        # Add miles column for cars
-        try:
-            c.execute("ALTER TABLE cars ADD COLUMN miles REAL")
-        except sqlite3.OperationalError:
-            pass  # Column already exists
-        
-        # Add VIN number column
-        try:
-            c.execute("ALTER TABLE cars ADD COLUMN vin TEXT")
-        except sqlite3.OperationalError:
-            pass  # Column already exists
-            
-        # Add purchase mileage column
-        try:
-            c.execute("ALTER TABLE cars ADD COLUMN purchase_mileage REAL")
-        except sqlite3.OperationalError:
-            pass  # Column already exists
-            
-        # Add sold mileage column
-        try:
-            c.execute("ALTER TABLE cars ADD COLUMN sold_mileage REAL")
-        except sqlite3.OperationalError:
-            pass  # Column already exists
-        
-        # Add purchase hours column
-        try:
-            c.execute("ALTER TABLE cars ADD COLUMN purchase_hours REAL")
-        except sqlite3.OperationalError:
-            pass  # Column already exists
+
+def migrate_db():
+    """
+    Runs schema migrations on startup. Safe to run every time —
+    only applies changes that haven't been applied yet.
+    Add new migrations as version < N blocks below.
+    """
+    with sqlite3.connect(DATABASE) as conn:
+        c = conn.cursor()
+
+        # Create version tracking table
+        c.execute('''CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL)''')
+        conn.commit()
+
+        row = c.execute('SELECT version FROM schema_version').fetchone()
+        version = row[0] if row else 0
+
+        if version < 1:
+            # Migration 1 - original columns added via ALTER TABLE
+            migrations = [
+                "ALTER TABLE cars ADD COLUMN hours REAL",
+                "ALTER TABLE cars ADD COLUMN miles REAL",
+                "ALTER TABLE cars ADD COLUMN vin TEXT",
+                "ALTER TABLE cars ADD COLUMN purchase_mileage REAL",
+                "ALTER TABLE cars ADD COLUMN sold_mileage REAL",
+                "ALTER TABLE cars ADD COLUMN purchase_hours REAL",
+                "ALTER TABLE cars ADD COLUMN purchase_date TEXT",
+                "ALTER TABLE cars ADD COLUMN sell_date TEXT",
+            ]
+            for sql in migrations:
+                try:
+                    c.execute(sql)
+                except sqlite3.OperationalError:
+                    pass  # Column already exists
+            c.execute('DELETE FROM schema_version')
+            c.execute('INSERT INTO schema_version (version) VALUES (1)')
+            conn.commit()
+
+        if version < 2:
+            # Migration 2 - add receipt_image to maintenance_records and aftermarket_parts
+            migrations = [
+                "ALTER TABLE maintenance_records ADD COLUMN receipt_image TEXT",
+                "ALTER TABLE aftermarket_parts ADD COLUMN receipt_image TEXT",
+            ]
+            for sql in migrations:
+                try:
+                    c.execute(sql)
+                except sqlite3.OperationalError:
+                    pass  # Column already exists
+            c.execute('DELETE FROM schema_version')
+            c.execute('INSERT INTO schema_version (version) VALUES (2)')
+            conn.commit()
+
+        # Add future migrations here:
+        # if version < 3:
+        #     c.execute("ALTER TABLE cars ADD COLUMN color TEXT")
+        #     c.execute('DELETE FROM schema_version')
+        #     c.execute('INSERT INTO schema_version (version) VALUES (3)')
+        #     conn.commit()
 
 init_db()
+migrate_db()
 
 # Login logic
 @app.route('/login', methods=['GET', 'POST'])
@@ -161,7 +186,6 @@ def login():
         if user is None:
             return jsonify({'success': False, 'error': 'Invalid username or password'})
             
-        # Verify password
         if not check_password_hash(user['password_hash'], password):
             return jsonify({'success': False, 'error': 'Invalid username or password'})        
             
@@ -185,18 +209,15 @@ def api_register():
     confirm_password = request.form.get('confirm_password', '')
     first_name = request.form.get('first_name', '').strip()
     
-    # Basic validation
     if not email or not password or not first_name:
         return jsonify({'success': False, 'error': 'Please fill in all required fields'})
     
-    # Email validation
     if '@' not in email or '.' not in email:
         return jsonify({'success': False, 'error': 'Please enter a valid email address'})
     
     if password != confirm_password:
         return jsonify({'success': False, 'error': 'Passwords do not match'})
     
-    # Password requirements
     if len(password) < 8:
         return jsonify({'success': False, 'error': 'Password must be at least 8 characters long'})
     
@@ -215,27 +236,22 @@ def api_register():
     
     conn = get_db_connection()
     
-    # Check if email already exists
     existing_user = conn.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone()
     if existing_user:
         conn.close()
         return jsonify({'success': False, 'error': 'An account with this email already exists'})
     
-    # Create new user
     print(f"Attempting to insert: first_name={first_name}, last_name={request.form.get('last_name', '').strip()}, email={email}")
     try:
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-        import secrets
-        salt = secrets.token_hex(16)  # Generate a random salt
+        salt = secrets.token_hex(16)
         conn.execute('INSERT INTO users (first_name, last_name, email, username, password_hash, salt) VALUES (?, ?, ?, ?, ?, ?)', 
             (first_name, request.form.get('last_name', '').strip(), email, email, hashed_password, salt))
         conn.commit()
         
-        # Get the new user's ID
         new_user = conn.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone()
         user_id = new_user['id']
         
-        # Auto-login the user
         session['user_id'] = user_id
         session['email'] = email
         session['first_name'] = first_name
@@ -246,7 +262,7 @@ def api_register():
     except sqlite3.Error as e:
         conn.rollback()
         conn.close()
-        print(f"Database error: {e}")  # Debug print
+        print(f"Database error: {e}")
         return jsonify({'success': False, 'error': f'Database error: {str(e)}'})
 
 @app.route('/logout')
@@ -254,7 +270,6 @@ def logout():
     session.clear()
     return redirect(url_for('landing'))
 
-# Login required decorator
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -263,14 +278,11 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Home page
 @app.route("/")
 def home():
-    # If user is not logged in, redirect to landing page
     if 'user_id' not in session:
         return redirect(url_for('landing'))
     
-    # If user is logged in, show their personalized dashboard
     conn = get_db_connection()
     cars_list = conn.execute("SELECT * FROM cars WHERE user_id = ?", (session['user_id'],)).fetchall()
     conn.close()
@@ -282,7 +294,6 @@ def adv_garage():
     conn = get_db_connection()
     conn.row_factory = sqlite3.Row
     
-    # Get all cars data
     active_cars = conn.execute('''
         SELECT * FROM cars 
         WHERE user_id = ? AND status = 'active'
@@ -295,7 +306,6 @@ def adv_garage():
         ORDER BY vehicle_type, make, model, year DESC
     ''', (session['user_id'],)).fetchall()
     
-    # Get maintenance data from maintenance_records table
     maintenance_data = conn.execute('''
         SELECT c.id, c.make, c.model, c.year, mr.date, mr.service_type, mr.cost, mr.description, mr.shop_name
         FROM cars c
@@ -304,7 +314,6 @@ def adv_garage():
         ORDER BY c.make, c.model, mr.date DESC
     ''', (session['user_id'],)).fetchall()
     
-    # Get parts data from aftermarket_parts table
     parts_data = conn.execute('''
         SELECT c.id, c.make, c.model, c.year, ap.part_name, ap.brand, ap.cost, ap.install_date, ap.notes
         FROM cars c
@@ -313,7 +322,6 @@ def adv_garage():
         ORDER BY c.make, c.model, ap.install_date DESC
     ''', (session['user_id'],)).fetchall()
     
-    # Calculate statistics
     total_maintenance_cost = sum(m['cost'] or 0 for m in maintenance_data)
     total_parts_cost = sum(p['cost'] or 0 for p in parts_data)
     total_cost = total_maintenance_cost + total_parts_cost
@@ -321,21 +329,14 @@ def adv_garage():
     maintenance_count = len([m for m in maintenance_data if m['service_type']])
     parts_count = len([p for p in parts_data if p['part_name']])
     
-    # Group data by car for detailed views
     cars_with_data = {}
     for car in active_cars + past_cars:
-        car_id = str(car['id'])  # Convert to string to ensure consistent key type
-        
-        # Get maintenance and parts for this car
+        car_id = str(car['id'])
         car_maintenance = [dict(m) for m in maintenance_data if str(m['id']) == car_id]
         car_parts = [dict(p) for p in parts_data if str(p['id']) == car_id]
-        
-        # Calculate costs
         maintenance_cost = sum(m['cost'] or 0 for m in car_maintenance)
         parts_cost = sum(p['cost'] or 0 for p in car_parts)
         total_cost = maintenance_cost + parts_cost
-        
-        # Assign to dictionary (safe approach)
         cars_with_data[car_id] = {
             'car': dict(car),
             'maintenance': car_maintenance,
@@ -345,7 +346,6 @@ def adv_garage():
             'total_cost': total_cost
         }
     
-    # Group cars by vehicle type
     def group_by_vehicle_type(cars_list):
         grouped = {}
         for car in cars_list:
@@ -358,16 +358,12 @@ def adv_garage():
     active_cars_by_type = group_by_vehicle_type(active_cars)
     past_cars_by_type = group_by_vehicle_type(past_cars)
     
-    # Get vehicle type statistics
     vehicle_type_stats = {}
     for vehicle_type in set(active_cars_by_type.keys()) | set(past_cars_by_type.keys()):
         active_count = len(active_cars_by_type.get(vehicle_type, []))
         past_count = len(past_cars_by_type.get(vehicle_type, []))
-        
-        # Use string keys consistently
         active_cost = sum(cars_with_data[str(car['id'])]['total_cost'] for car in active_cars_by_type.get(vehicle_type, []))
         past_cost = sum(cars_with_data[str(car['id'])]['total_cost'] for car in past_cars_by_type.get(vehicle_type, []))
-        
         vehicle_type_stats[vehicle_type] = {
             'active_count': active_count,
             'past_count': past_count,
@@ -404,7 +400,6 @@ def profile():
     conn = get_db_connection()
     
     if request.method == 'POST':
-        # Get form data
         first_name = request.form.get('first_name', '').strip()
         last_name = request.form.get('last_name', '').strip()
         email = request.form.get('email', '').strip()
@@ -412,22 +407,16 @@ def profile():
         new_password = request.form.get('new_password', '')
         confirm_password = request.form.get('confirm_password', '')
         
-        # Basic validation
         if not all([first_name, last_name]):
             flash('First and last name are required', 'error')
             return redirect(url_for('profile'))
         
-        # Get current user data
-        user = conn.execute(
-            "SELECT * FROM users WHERE id = ?",
-            (session['user_id'],)
-        ).fetchone()
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
         
         if user is None:
             conn.close()
             abort(404)
         
-        # Handle password change if provided
         if new_password:
             if not current_password:
                 flash('Current password is required to change password', 'error')
@@ -437,7 +426,6 @@ def profile():
                 flash('New passwords do not match', 'error')
                 return redirect(url_for('profile'))
             
-            # Verify current password
             salt = user['salt']
             hashed_current = hashlib.pbkdf2_hmac('sha256', current_password.encode('utf-8'), salt.encode('utf-8'), 100000).hex()
             
@@ -445,26 +433,16 @@ def profile():
                 flash('Current password is incorrect', 'error')
                 return redirect(url_for('profile'))
             
-            # Generate new password hash
             new_hashed_password = hashlib.pbkdf2_hmac('sha256', new_password.encode('utf-8'), salt.encode('utf-8'), 100000).hex()
-            
-            # Update password
-            conn.execute(
-                "UPDATE users SET password_hash = ? WHERE id = ?",
-                (new_hashed_password, session['user_id'])
-            )
+            conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hashed_password, session['user_id']))
         
-        # Update profile information
         try:
             conn.execute(
                 "UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?",
                 (first_name, last_name, email, session['user_id'])
             )
             conn.commit()
-            
-            # Update session with new first name
             session['first_name'] = first_name
-            
             flash('Profile updated successfully!', 'success')
         except sqlite3.IntegrityError:
             flash('Email already exists', 'error')
@@ -473,11 +451,7 @@ def profile():
         
         return redirect(url_for('profile'))
     
-    # GET request - show profile form
-    user = conn.execute(
-        "SELECT * FROM users WHERE id = ?",
-        (session['user_id'],)
-    ).fetchone()
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],)).fetchone()
     conn.close()
     
     if user is None:
@@ -485,26 +459,22 @@ def profile():
     
     return render_template('profile.html', user=user)
 
-# List all cars
 @app.route("/cars")
 @login_required
 def cars():
     conn = get_db_connection()
     conn.row_factory = sqlite3.Row
     
-    # Get active cars grouped by vehicle type
     active_cars = conn.execute(
         'SELECT * FROM cars WHERE user_id = ? AND status = "active" ORDER BY vehicle_type, make, model',
         (session['user_id'],)
     ).fetchall()
     
-    # Get past cars grouped by vehicle type
     past_cars = conn.execute(
         'SELECT * FROM cars WHERE user_id = ? AND status = "past" ORDER BY vehicle_type, make, model',
         (session['user_id'],)
     ).fetchall()
     
-    # Group cars by vehicle type
     def group_cars_by_type(cars):
         grouped = {}
         for car in cars:
@@ -527,7 +497,6 @@ def cars():
 @login_required
 def add_car():
     if request.method == "POST":
-        # Get form data
         vehicle_type = request.form.get('vehicle_type', 'Car')
         make = request.form.get('make', '').strip()
         model = request.form.get('model', '').strip()
@@ -595,7 +564,7 @@ def add_car():
             hours = None
             purchase_hours = None
 
-        # Handle file upload (applies to all vehicle types)
+        # Handle file upload
         image_path = None
         if 'image' in request.files:
             file = request.files['image']
@@ -629,56 +598,31 @@ def add_car():
     # GET request - render the form
     return render_template("add_car.html")
 
-# Car detail page
 @app.route("/car/<int:car_id>")
 @login_required
 def car_detail(car_id):
     conn = get_db_connection()
-    conn.row_factory = sqlite3.Row  # This makes rows accessible by column name
+    conn.row_factory = sqlite3.Row
     
-    # Get car data
-    car = conn.execute('''
-        SELECT * FROM cars 
-        WHERE id = ? AND user_id = ?
-    ''', (car_id, session['user_id'])).fetchone()
+    car = conn.execute('SELECT * FROM cars WHERE id = ? AND user_id = ?', (car_id, session['user_id'])).fetchone()
     
     if car is None:
         conn.close()
         abort(404)
     
-    # Get maintenance records
-    maintenance = conn.execute('''
-        SELECT * FROM maintenance_records 
-        WHERE car_id = ? 
-        ORDER BY date DESC
-    ''', (car_id,)).fetchall()
-    
-    # Get aftermarket parts
-    parts = conn.execute('''
-        SELECT * FROM aftermarket_parts 
-        WHERE car_id = ? 
-        ORDER BY install_date DESC
-    ''', (car_id,)).fetchall()
-    
-    # Get scheduled maintenance
-    scheduled = conn.execute('''
-        SELECT * FROM scheduled_maintenance 
-        WHERE car_id = ? 
-        ORDER BY due_date ASC
-    ''', (car_id,)).fetchall()
+    maintenance = conn.execute('SELECT * FROM maintenance_records WHERE car_id = ? ORDER BY date DESC', (car_id,)).fetchall()
+    parts = conn.execute('SELECT * FROM aftermarket_parts WHERE car_id = ? ORDER BY install_date DESC', (car_id,)).fetchall()
+    scheduled = conn.execute('SELECT * FROM scheduled_maintenance WHERE car_id = ? ORDER BY due_date ASC', (car_id,)).fetchall()
     
     conn.close()
-    
     return render_template("car_detail.html", car=car, maintenance=maintenance, parts=parts, scheduled=scheduled)
 
-# Edit car details
 @app.route("/car/<int:car_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_car(car_id):
     conn = get_db_connection()
     
     if request.method == "POST":
-        # Get form data
         vehicle_type = request.form.get('vehicle_type', 'Car')
         make = request.form.get('make', '').strip()
         model = request.form.get('model', '').strip()
@@ -701,7 +645,6 @@ def edit_car(car_id):
                 hours = None
             miles = None
         else:
-            # Handle purchase mileage validation
             if purchase_mileage:
                 try:
                     purchase_mileage = float(purchase_mileage)
@@ -711,7 +654,6 @@ def edit_car(car_id):
             else:
                 purchase_mileage = None
             
-            # Handle current miles validation
             if miles:
                 try:
                     miles = float(miles)
@@ -719,44 +661,35 @@ def edit_car(car_id):
                     flash('Please enter a valid number for current miles', 'error')
                     return redirect(url_for('edit_car', car_id=car_id))
             else:
-                miles = None  # Only set to None if miles is empty
+                miles = None
             hours = None
         
-        # Basic validation
         if not all([make, model, year]):
             flash('Please fill in all required fields', 'error')
             return redirect(url_for('edit_car', car_id=car_id))
             
         try:
-            year = int(year)  # Convert year to integer
+            year = int(year)
         except ValueError:
             flash('Please enter a valid year', 'error')
             return redirect(url_for('edit_car', car_id=car_id))
         
-        # Get current car data
-        car = conn.execute(
-            "SELECT * FROM cars WHERE id = ? AND user_id = ?",
-            (car_id, session['user_id'])
-        ).fetchone()
+        car = conn.execute("SELECT * FROM cars WHERE id = ? AND user_id = ?", (car_id, session['user_id'])).fetchone()
         
         if car is None:
             conn.close()
             abort(404)
         
-        # Handle file upload if a new image is provided
-        image_path = car['image_path']  # Keep existing image by default
+        image_path = car['image_path']
         if 'image' in request.files:
             file = request.files['image']
             if file.filename != '':
                 if allowed_file(file.filename):
-                    # Delete old image if it exists
                     if car['image_path']:
                         try:
                             os.remove(os.path.join(app.config['UPLOAD_FOLDER'], car['image_path']))
                         except OSError:
-                            pass  # If file doesn't exist, continue
-                    
-                    # Save new image
+                            pass
                     filename = secure_filename(file.filename)
                     filename = f"{int(time.time())}_{filename}"
                     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -766,7 +699,6 @@ def edit_car(car_id):
                     flash('Invalid file type. Please upload an image file (PNG, JPG, JPEG, GIF, WEBP)', 'error')
                     return redirect(url_for('edit_car', car_id=car_id))
         
-        # Update the car in the database
         try:
             conn.execute(
                 "UPDATE cars SET vehicle_type = ?, make = ?, model = ?, year = ?, purchase_date = ?, sell_date = ?, image_path = ?, hours = ?, miles = ?, vin = ?, purchase_mileage = ? WHERE id = ? AND user_id = ?",
@@ -782,11 +714,9 @@ def edit_car(car_id):
         finally:
             conn.close()
     
-    # GET request - redirect to car detail page (since we use modal)
     conn.close()
     return redirect(url_for('car_detail', car_id=car_id))
 
-# Add maintenance record
 @app.route("/car/<int:car_id>/add_maintenance", methods=["POST"])
 def add_maintenance(car_id):
     date = request.form["date"]
@@ -796,16 +726,25 @@ def add_maintenance(car_id):
     cost = request.form.get("cost") or None
     shop_name = request.form.get("shop_name") or None
     
+    receipt_image = None
+    if 'receipt_image' in request.files:
+        file = request.files['receipt_image']
+        if file.filename != '' and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filename = f"{int(time.time())}_{filename}"
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            receipt_image = filename
+    
     with sqlite3.connect(DATABASE) as conn:
         c = conn.cursor()
         c.execute("""INSERT INTO maintenance_records 
-                    (car_id, date, mileage, service_type, description, cost, shop_name) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (car_id, date, mileage, service_type, description, cost, shop_name))
+                    (car_id, date, mileage, service_type, description, cost, shop_name, receipt_image) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (car_id, date, mileage, service_type, description, cost, shop_name, receipt_image))
         conn.commit()
     return redirect(url_for("car_detail", car_id=car_id))
 
-# Edit maintenance record
 @app.route("/car/<int:car_id>/edit_maintenance/<int:record_id>", methods=["POST"])
 def edit_maintenance(car_id, record_id):
     date = request.form.get("date")
@@ -817,35 +756,43 @@ def edit_maintenance(car_id, record_id):
     cost = float(cost_val) if cost_val and cost_val.strip() else None
     shop_name = request.form.get("shop_name") or None
     
+    receipt_image = None
+    if 'receipt_image' in request.files:
+        file = request.files['receipt_image']
+        if file.filename != '' and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filename = f"{int(time.time())}_{filename}"
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            receipt_image = filename
+    
     with sqlite3.connect(DATABASE) as conn:
         c = conn.cursor()
-        # First get the current record to preserve any fields not in the form
         c.execute("SELECT * FROM maintenance_records WHERE id = ? AND car_id = ?", (record_id, car_id))
         current = c.fetchone()
         if not current:
             return redirect(url_for("car_detail", car_id=car_id))
             
-        # Update only the provided fields
         update_data = {
             'date': date if date is not None else current[1],
             'mileage': mileage if mileage is not None else current[2],
             'service_type': service_type if service_type is not None else current[3],
             'description': description if description is not None else current[4],
             'cost': cost if cost is not None else current[5],
-            'shop_name': shop_name if shop_name is not None else current[6]
+            'shop_name': shop_name if shop_name is not None else current[6],
+            'receipt_image': receipt_image if receipt_image is not None else current[7]
         }
         
         c.execute("""UPDATE maintenance_records 
                     SET date = ?, mileage = ?, service_type = ?, 
-                        description = ?, cost = ?, shop_name = ?
+                        description = ?, cost = ?, shop_name = ?, receipt_image = ?
                     WHERE id = ? AND car_id = ?""",
                 (update_data['date'], update_data['mileage'], update_data['service_type'],
                 update_data['description'], update_data['cost'], update_data['shop_name'],
-                record_id, car_id))
+                update_data['receipt_image'], record_id, car_id))
         conn.commit()
     return redirect(url_for("car_detail", car_id=car_id))
 
-# Delete maintenance record
 @app.route("/car/<int:car_id>/delete_maintenance/<int:record_id>")
 def delete_maintenance(car_id, record_id):
     with sqlite3.connect(DATABASE) as conn:
@@ -854,7 +801,6 @@ def delete_maintenance(car_id, record_id):
         conn.commit()
     return redirect(url_for("car_detail", car_id=car_id))
 
-# Add aftermarket part
 @app.route("/car/<int:car_id>/add_part", methods=["POST"])
 def add_part(car_id):
     part_name = request.form["part_name"]
@@ -863,16 +809,25 @@ def add_part(car_id):
     cost = request.form.get("cost") or None
     notes = request.form.get("notes") or None
     
+    receipt_image = None
+    if 'receipt_image' in request.files:
+        file = request.files['receipt_image']
+        if file.filename != '' and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filename = f"{int(time.time())}_{filename}"
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            receipt_image = filename
+    
     with sqlite3.connect(DATABASE) as conn:
         c = conn.cursor()
         c.execute("""INSERT INTO aftermarket_parts 
-                    (car_id, part_name, brand, install_date, cost, notes) 
-                    VALUES (?, ?, ?, ?, ?, ?)""",
-                (car_id, part_name, brand, install_date, cost, notes))
+                    (car_id, part_name, brand, install_date, cost, notes, receipt_image) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (car_id, part_name, brand, install_date, cost, notes, receipt_image))
         conn.commit()
     return redirect(url_for("car_detail", car_id=car_id))
 
-# Edit aftermarket part
 @app.route("/car/<int:car_id>/edit_part/<int:part_id>", methods=["POST"])
 def edit_part(car_id, part_id):
     part_name = request.form["part_name"]
@@ -890,7 +845,6 @@ def edit_part(car_id, part_id):
         conn.commit()
     return redirect(url_for("car_detail", car_id=car_id))
 
-# Delete aftermarket part
 @app.route("/car/<int:car_id>/delete_part/<int:part_id>")
 def delete_part(car_id, part_id):
     with sqlite3.connect(DATABASE) as conn:
@@ -899,7 +853,6 @@ def delete_part(car_id, part_id):
         conn.commit()
     return redirect(url_for("car_detail", car_id=car_id))
 
-# Add scheduled maintenance
 @app.route("/car/<int:car_id>/add_scheduled", methods=["POST"])
 def add_scheduled(car_id):
     service_type = request.form["service_type"]
@@ -917,7 +870,6 @@ def add_scheduled(car_id):
         conn.commit()
     return redirect(url_for("car_detail", car_id=car_id))
 
-# Mark scheduled maintenance as completed
 @app.route("/car/<int:car_id>/complete_scheduled/<int:scheduled_id>")
 def complete_scheduled(car_id, scheduled_id):
     with sqlite3.connect(DATABASE) as conn:
@@ -927,7 +879,6 @@ def complete_scheduled(car_id, scheduled_id):
         conn.commit()
     return redirect(url_for("car_detail", car_id=car_id))
 
-# Edit scheduled maintenance
 @app.route("/car/<int:car_id>/edit_scheduled/<int:scheduled_id>", methods=["POST"])
 def edit_scheduled(car_id, scheduled_id):
     service_type = request.form["service_type"]
@@ -945,7 +896,6 @@ def edit_scheduled(car_id, scheduled_id):
         conn.commit()
     return redirect(url_for("car_detail", car_id=car_id))
 
-# Delete scheduled maintenance
 @app.route("/car/<int:car_id>/delete_scheduled/<int:scheduled_id>")
 def delete_scheduled(car_id, scheduled_id):
     with sqlite3.connect(DATABASE) as conn:
@@ -960,7 +910,6 @@ def update_car_status(car_id):
     reason = request.form.get('reason', '')
     sold_mileage = request.form.get('sold_mileage')
     
-    # Handle sold mileage validation
     if sold_mileage:
         try:
             sold_mileage = float(sold_mileage)
@@ -998,16 +947,13 @@ def restore_car(car_id):
 def delete_car(car_id):
     conn = get_db_connection()
     
-    # Verify user owns this car
-    car = conn.execute('SELECT * FROM cars WHERE id = ? AND user_id = ?', 
-        (car_id, session['user_id'])).fetchone()
+    car = conn.execute('SELECT * FROM cars WHERE id = ? AND user_id = ?', (car_id, session['user_id'])).fetchone()
     
     if not car:
         conn.close()
         flash('Vehicle not found', 'error')
         return redirect(url_for('cars'))
     
-    # Delete the car (this will also delete related maintenance records due to CASCADE)
     conn.execute('DELETE FROM cars WHERE id = ?', (car_id,))
     conn.commit()
     conn.close()
@@ -1015,7 +961,6 @@ def delete_car(car_id):
     flash(f'{car["year"]} {car["make"]} {car["model"]} has been deleted', 'success')
     return redirect(url_for('cars'))
 
-# Serve uploaded files
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
