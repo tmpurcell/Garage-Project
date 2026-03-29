@@ -120,6 +120,30 @@ def init_db():
             c.execute("ALTER TABLE cars ADD COLUMN miles REAL")
         except sqlite3.OperationalError:
             pass  # Column already exists
+        
+        # Add VIN number column
+        try:
+            c.execute("ALTER TABLE cars ADD COLUMN vin TEXT")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+            
+        # Add purchase mileage column
+        try:
+            c.execute("ALTER TABLE cars ADD COLUMN purchase_mileage REAL")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+            
+        # Add sold mileage column
+        try:
+            c.execute("ALTER TABLE cars ADD COLUMN sold_mileage REAL")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        
+        # Add purchase hours column
+        try:
+            c.execute("ALTER TABLE cars ADD COLUMN purchase_hours REAL")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
 
 init_db()
 
@@ -512,30 +536,36 @@ def add_car():
         sell_date = request.form.get('sell_date')
         hours = request.form.get('hours')
         miles = request.form.get('miles')
+        vin = request.form.get('vin', '').strip()
+        purchase_mileage = request.form.get('purchase_mileage')
+        purchase_hours = request.form.get('purchase_hours')
         
         if vehicle_type == 'Boat':
+            # Handle hours for boats
             if hours:
                 try:
                     hours = float(hours)
                 except ValueError:
-                    flash('Please enter a valid number for hours', 'error')
+                    flash('Please enter a valid number for current hours', 'error')
                     return redirect(url_for('add_car'))
             else:
                 hours = None
-            miles = None
-        else:
-            # For cars, trucks, etc. - handle miles
-            if miles:
+            
+            # Handle purchase hours for boats
+            if purchase_hours:
                 try:
-                    miles = float(miles)
+                    purchase_hours = float(purchase_hours)
                 except ValueError:
-                    flash('Please enter a valid number for miles', 'error')
+                    flash('Please enter a valid number for purchase hours', 'error')
                     return redirect(url_for('add_car'))
             else:
-                miles = None
-            hours = None
-
-            # Basic validation
+                purchase_hours = None
+            
+            # Clear mileage fields for boats
+            miles = None
+            purchase_mileage = None
+            
+            # Basic validation for boats
             if not all([make, model, year]):
                 flash('Please fill in all required fields', 'error')
                 return redirect(url_for('add_car'))
@@ -546,37 +576,62 @@ def add_car():
                 flash('Please enter a valid year', 'error')
                 return redirect(url_for('add_car'))
                 
-            # Handle file upload
-            image_path = None
-            if 'image' in request.files:
-                file = request.files['image']
-                if file.filename != '' and allowed_file(file.filename):
-                    filename = secure_filename(file.filename)
-                    # Add timestamp to make filename unique
-                    filename = f"{int(time.time())}_{filename}"
-                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                    file.save(file_path)
-                    image_path = filename
-                elif file.filename != '':
-                    flash('Invalid file type. Please upload an image file (PNG, JPG, JPEG, GIF, WEBP)', 'error')
+        else:
+            # Handle purchase mileage for non-boats
+            if purchase_mileage:
+                try:
+                    purchase_mileage = float(purchase_mileage)
+                except ValueError:
+                    flash('Please enter a valid number for purchase mileage', 'error')
                     return redirect(url_for('add_car'))
+            else:
+                purchase_mileage = None
             
-            # Save to database
-            conn = get_db_connection()
-            try:
-                conn.execute(
-                    "INSERT INTO cars (user_id, vehicle_type, make, model, year, purchase_date, sell_date, image_path, hours, miles) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (session['user_id'], vehicle_type, make, model, year, purchase_date, sell_date, image_path, hours, miles)
-                )
-                conn.commit()
-                flash('Car added successfully!', 'success')
-                return redirect(url_for('cars'))
-            except sqlite3.Error as e:
-                conn.rollback()
-                flash('An error occurred while saving the car. Please try again.', 'error')
+            # Handle current miles for non-boats
+            if miles:
+                try:
+                    miles = float(miles)
+                except ValueError:
+                    flash('Please enter a valid number for current miles', 'error')
+                    return redirect(url_for('add_car'))
+            else:
+                miles = None
+            
+            # Clear hours fields for non-boats
+            hours = None
+            purchase_hours = None
+
+        # Handle file upload (applies to all vehicle types)
+        image_path = None
+        if 'image' in request.files:
+            file = request.files['image']
+            if file.filename != '' and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                # Add timestamp to make filename unique
+                filename = f"{int(time.time())}_{filename}"
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(file_path)
+                image_path = filename
+            elif file.filename != '':
+                flash('Invalid file type. Please upload an image file (PNG, JPG, JPEG, GIF, WEBP)', 'error')
                 return redirect(url_for('add_car'))
-            finally:
-                conn.close()
+        
+        # Save to database
+        conn = get_db_connection()
+        try:
+            conn.execute(
+                "INSERT INTO cars (user_id, vehicle_type, make, model, year, purchase_date, sell_date, image_path, hours, miles, vin, purchase_mileage, purchase_hours) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (session['user_id'], vehicle_type, make, model, year, purchase_date, sell_date, image_path, hours, miles, vin, purchase_mileage, purchase_hours)
+            )
+            conn.commit()
+            flash('Car added successfully!', 'success')
+            return redirect(url_for('cars'))
+        except sqlite3.Error as e:
+            conn.rollback()
+            flash('An error occurred while saving the car. Please try again.', 'error')
+            return redirect(url_for('add_car'))
+        finally:
+            conn.close()
             
         return render_template("add_car.html")
 
@@ -638,6 +693,8 @@ def edit_car(car_id):
         sell_date = request.form.get('sell_date')
         hours = request.form.get('hours')
         miles = request.form.get('miles')
+        vin = request.form.get('vin', '').strip()
+        purchase_mileage = request.form.get('purchase_mileage')
         
         if vehicle_type == 'Boat':
             if hours:
@@ -650,12 +707,22 @@ def edit_car(car_id):
                 hours = None
             miles = None
         else:
-            # For cars, trucks, etc. - handle miles
+            # Handle purchase mileage validation
+            if purchase_mileage:
+                try:
+                    purchase_mileage = float(purchase_mileage)
+                except ValueError:
+                    flash('Please enter a valid number for purchase mileage', 'error')
+                    return redirect(url_for('edit_car', car_id=car_id))
+            else:
+                purchase_mileage = None
+            
+            # Handle current miles validation
             if miles:
                 try:
                     miles = float(miles)
                 except ValueError:
-                    flash('Please enter a valid number for miles', 'error')
+                    flash('Please enter a valid number for current miles', 'error')
                     return redirect(url_for('edit_car', car_id=car_id))
             else:
                 miles = None  # Only set to None if miles is empty
@@ -708,8 +775,8 @@ def edit_car(car_id):
         # Update the car in the database
         try:
             conn.execute(
-                "UPDATE cars SET vehicle_type = ?, make = ?, model = ?, year = ?, purchase_date = ?, sell_date = ?, image_path = ?, hours = ?, miles = ? WHERE id = ? AND user_id = ?",
-                (vehicle_type, make, model, year, purchase_date, sell_date, image_path, hours, miles, car_id, session['user_id'])
+                "UPDATE cars SET vehicle_type = ?, make = ?, model = ?, year = ?, purchase_date = ?, sell_date = ?, image_path = ?, hours = ?, miles = ?, vin = ?, purchase_mileage = ? WHERE id = ? AND user_id = ?",
+                (vehicle_type, make, model, year, purchase_date, sell_date, image_path, hours, miles, vin, purchase_mileage, car_id, session['user_id'])
             )
             conn.commit()
             flash('Car updated successfully!', 'success')
@@ -897,11 +964,22 @@ def delete_scheduled(car_id, scheduled_id):
 @login_required
 def update_car_status(car_id):
     reason = request.form.get('reason', '')
+    sold_mileage = request.form.get('sold_mileage')
+    
+    # Handle sold mileage validation
+    if sold_mileage:
+        try:
+            sold_mileage = float(sold_mileage)
+        except ValueError:
+            flash('Please enter a valid number for sold mileage', 'error')
+            return redirect(url_for('car_detail', car_id=car_id))
+    else:
+        sold_mileage = None
     
     conn = get_db_connection()
     conn.execute(
-        'UPDATE cars SET status = ?, reason = ? WHERE id = ? AND user_id = ?',
-        ('past', reason, car_id, session['user_id'])
+        'UPDATE cars SET status = ?, reason = ?, sold_mileage = ? WHERE id = ? AND user_id = ?',
+        ('past', reason, sold_mileage, car_id, session['user_id'])
     )
     conn.commit()
     conn.close()

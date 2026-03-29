@@ -29,6 +29,26 @@
         <input type="number" name="year" class="border p-2 w-full rounded" required>
     </div>
     <div>
+        <label class="block font-medium">VIN Number (optional):</label>
+        <input type="text" name="vin" class="border p-2 w-full rounded" placeholder="e.g., 1HGCM82633A123456">
+    </div>
+    <div>
+        <label class="block font-medium">Miles When Purchased (optional):</label>
+        <input type="number" name="purchase_mileage" class="border p-2 w-full rounded" step="0.1" placeholder="e.g., 25000">
+    </div>
+    <div id="purchase_hours_field" style="display: none;">
+        <label class="block font-medium">Hours When Purchased (optional):</label>
+        <input type="number" name="purchase_hours" class="border p-2 w-full rounded" step="0.1" placeholder="e.g., 150.5">
+    </div>
+    <div>
+        <label class="block font-medium">Current Miles (optional):</label>
+        <input type="number" name="miles" class="border p-2 w-full rounded" step="0.1" placeholder="e.g., 35000">
+    </div>
+    <div id="hours_field" style="display: none;">
+        <label class="block font-medium">Current Hours (optional):</label>
+        <input type="number" name="hours" class="border p-2 w-full rounded" step="0.1" placeholder="e.g., 250.5">
+    </div>
+    <div>
         <label class="block font-medium">Vehicle Image (optional):</label>
         <input type="file" name="image" accept="image/*" class="border p-2 w-full rounded">
         <p class="text-sm text-gray-600 mt-1">Accepted formats: PNG, JPG, JPEG, GIF, WEBP (max 16MB)</p>
@@ -36,4 +56,40 @@
 
     <button type="submit" class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">Add Vehicle</button>
 </form>
+
+<script>
+    function toggleHoursField() {
+        const vehicleSelect = document.querySelector('select[name="vehicle_type"]');
+        if (!vehicleSelect) return;
+        
+        const vehicleType = vehicleSelect.value;
+        const hoursField = document.getElementById('hours-field');
+        const milesField = document.querySelector('div:has(input[name="miles"])');
+        const purchaseHoursField = document.getElementById('purchase_hours_field');
+        const purchaseMileageField = document.querySelector('div:has(input[name="purchase_mileage"])');
+        
+        if (vehicleType === 'Boat') {
+            // Show hours fields, hide miles fields
+            hoursField.style.display = 'block';
+            purchaseHoursField.style.display = 'block';
+            milesField.style.display = 'none';
+            purchaseMileageField.style.display = 'none';
+        } else {
+            // Show miles fields, hide hours fields
+            hoursField.style.display = 'none';
+            purchaseHoursField.style.display = 'none';
+            milesField.style.display = 'block';
+            purchaseMileageField.style.display = 'block';
+        }
+    }
+    
+    // Add event listener
+    document.addEventListener('DOMContentLoaded', function() {
+        const vehicleSelect = document.querySelector('select[name="vehicle_type"]');
+        if (vehicleSelect) {
+            vehicleSelect.addEventListener('change', toggleHoursField);
+            toggleHoursField(); // Initialize on page load
+        }
+    });
+</script>
 {% endblock %}

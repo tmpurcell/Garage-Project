@@ -25,22 +25,44 @@
             <div class="flex items-start justify-between">
                 <div>
                     <h1 class="text-4xl font-bold text-gray-800">{{ car['year'] }} {{ car['make'] }} {{ car['model'] }}</h1>
+                    {% if car['vin'] %}
+                        <p class="text-lg text-gray-600 font-mono">VIN: {{ car['vin'] }}</p>
+                    {% endif %}
                     {% if car['purchase_date'] %}
                         <p class="text-lg text-gray-600">
                             Purchased: {{ car['purchase_date'][5:7] }}/{{ car['purchase_date'][8:10] }}/{{ car['purchase_date'][0:4] }}
-                        </p>                    {% endif %}
+                        </p>
+                    {% endif %}
+                    {% if car['vehicle_type'] == 'Boat' %}
+                        {% if car['purchase_hours'] %}
+                            <p class="text-lg text-gray-600">
+                                Hours When Purchased: {{ car['purchase_hours'] }}
+                            </p>
+                        {% endif %}
+                    {% else %}
+                        {% if car['purchase_mileage'] %}
+                            <p class="text-lg text-gray-600">
+                                Miles When Purchased: {{ car['purchase_mileage'] }}
+                            </p>
+                        {% endif %}
+                    {% endif %}
                     {% if car['sell_date'] %}
                         <p class="text-lg text-gray-600">
-                            Sold: {{ car['sell_date'][5:7] }}/{{ car['sell_date'][8:10] }}/{{ car['sell_date'][0:4] }}
+                            {% if car['reason'] == 'Sold' %}Date of Sale{% elif car['reason'] == 'Crashed/Totaled' %}Date of Crash{% elif car['reason'] == 'Engine Blew Up' or car['reason'] == 'Transmission Failed' %}Date of Failure{% elif car['reason'] == 'Traded In' %}Date of Trade-In{% elif car['reason'] == 'Stolen' %}Date of Theft{% elif car['reason'] == 'Too Expensive to Repair' %}Date of Decision{% else %}Date of Event{% endif %}: {{ car['sell_date'][5:7] }}/{{ car['sell_date'][8:10] }}/{{ car['sell_date'][0:4] }}
+                        </p>
+                    {% endif %}
+                    {% if car['sold_mileage'] %}
+                        <p class="text-lg text-gray-600">
+                            {% if car['reason'] == 'Sold' %}Miles at Time of Sale{% elif car['reason'] == 'Crashed/Totaled' %}Miles at Time of Crash{% elif car['reason'] == 'Engine Blew Up' or car['reason'] == 'Transmission Failed' %}Miles at Time of Failure{% elif car['reason'] == 'Traded In' %}Miles at Time of Trade-In{% elif car['reason'] == 'Stolen' %}Miles at Time of Theft{% elif car['reason'] == 'Too Expensive to Repair' %}Miles at Time of Decision{% else %}Miles at Time of Event{% endif %}: {{ car['sold_mileage'] }}
                         </p>
                     {% endif %}
                     {% if car['vehicle_type'] == 'Boat' %}
                         {% if car['hours'] %}
-                            <h2 class="text-xl font-semibold text-gray-600">{{ car['hours'] }} hours</h2>
+                            <h2 class="text-xl font-semibold text-gray-600">Current Hours: {{ car['hours'] }}</h2>
                         {% endif %}
                     {% else %}
                         {% if car['miles'] %}
-                            <h2 class="text-xl font-semibold text-gray-600">{{ car['miles'] }} miles</h2>
+                            <h2 class="text-xl font-semibold text-gray-600">Current Miles: {{ car['miles'] }}</h2>
                         {% endif %}
                     {% endif %}
                 </div>
@@ -62,10 +84,10 @@
 </div>
 
 <!-- Edit Car Modal -->
-<div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-4">
+<div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col mx-auto">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
                 <h2 class="text-2xl font-bold text-gray-800">Edit Car Details</h2>
                 <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-700">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,8 +95,11 @@
                     </svg>
                 </button>
             </div>
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6">
             
-            <form action="{{ url_for('edit_car', car_id=car['id']) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+            <form action="{{ url_for('edit_car', car_id=car['id']) }}" method="POST" enctype="multipart/form-data" class="space-y-4" id="editCarForm">
                 <div>
                     <label class="block font-medium mb-1">Make *</label>
                     <input type="text" name="make" value="{{ car['make'] }}" class="border p-2 w-full rounded" required>
@@ -88,12 +113,16 @@
                     <input type="number" name="year" value="{{ car['year'] }}" class="border p-2 w-full rounded" required>
                 </div>
                 <div>
-                    <label class="block font-medium mb-1">Purchase Date</label>
-                    <input type="date" name="purchase_date" value="{{ car['purchase_date'] if car['purchase_date'] else '' }}" class="border p-2 w-full rounded">
+                    <label class="block font-medium mb-1">VIN Number (optional)</label>
+                    <input type="text" name="vin" value="{{ car['vin'] if car['vin'] else '' }}" class="border p-2 w-full rounded" placeholder="e.g., 1HGCM82633A123456">
                 </div>
                 <div>
-                    <label class="block font-medium mb-1">Sell Date (optional)</label>
-                    <input type="date" name="sell_date" value="{{ car['sell_date'] if car['sell_date'] else '' }}" class="border p-2 w-full rounded">
+                    <label class="block font-medium mb-1">Miles When Purchased (optional)</label>
+                    <input type="number" name="purchase_mileage" value="{{ car['purchase_mileage'] if car['purchase_mileage'] else '' }}" class="border p-2 w-full rounded" step="0.1" placeholder="e.g., 25000">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Purchase Date</label>
+                    <input type="date" name="purchase_date" value="{{ car['purchase_date'] if car['purchase_date'] else '' }}" class="border p-2 w-full rounded">
                 </div>
                 <div>
                     <label class="block font-medium mb-1">Vehicle Type *</label>
@@ -123,11 +152,15 @@
                     <input type="file" name="image" accept="image/*" class="border p-2 w-full rounded">
                     <p class="text-sm text-gray-600 mt-1">Leave empty to keep current image</p>
                 </div>
-                <div class="flex gap-3 pt-4">
-                    <button type="submit" class="flex-1 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">Save Changes</button>
-                    <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
-                </div>
             </form>
+        </div>
+        
+        <!-- Sticky Footer with Buttons -->
+        <div class="border-t border-gray-200 p-6 bg-gray-50">
+            <div class="flex gap-3">
+                <button type="submit" form="editCarForm" class="flex-1 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">Save Changes</button>
+                <button type="button" onclick="closeEditModal()" class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
+            </div>
         </div>
     </div>
 </div>
@@ -588,7 +621,7 @@
             <form action="{{ url_for('update_car_status', car_id=car['id']) }}" method="POST" class="space-y-4">
                 <div>
                     <label class="block font-medium mb-1">Reason *</label>
-                    <select name="reason" class="border p-2 w-full rounded" required>
+                    <select name="reason" id="reasonSelect" class="border p-2 w-full rounded" required onchange="updateMileageLabel()">
                         <option value="">Select a reason</option>
                         <option value="Sold">Sold</option>
                         <option value="Crashed/Totaled">Crashed/Totaled</option>
@@ -599,6 +632,16 @@
                         <option value="Stolen">Stolen</option>
                         <option value="Other">Other</option>
                     </select>
+                </div>
+                <div id="mileageField">
+                    <label class="block font-medium mb-1">Miles at <span id="mileageContext">Event</span> (optional)</label>
+                    <input type="number" name="sold_mileage" class="border p-2 w-full rounded" step="0.1" placeholder="e.g., 45000">
+                    <p class="text-sm text-gray-500 mt-1">Record the odometer reading when this event occurred</p>
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Date of <span id="dateContext">Event</span> (optional)</label>
+                    <input type="date" name="sell_date" class="border p-2 w-full rounded">
+                    <p class="text-sm text-gray-500 mt-1">Record when this event occurred</p>
                 </div>
                 <div class="flex gap-3 pt-4">
                     <button type="submit" class="flex-1 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">Mark as Past</button>
@@ -613,16 +656,6 @@
     // Save active tab to localStorage
     function saveActiveTab(tabName) {
         localStorage.setItem('activeTab', tabName);
-    }
-
-    // Restore active tab from localStorage
-    function restoreActiveTab() {
-        const savedTab = localStorage.getItem('activeTab');
-        if (savedTab) {
-            showTab(savedTab);
-        } else {
-            showTab('maintenance');
-        }
     }
 
     function showTab(tabName) {
@@ -642,8 +675,16 @@
         if (content) {
             content.classList.remove('hidden');
         } else {
-            // Fallback to maintenance tab if the saved tab doesn't exist
-            showTab('maintenance');
+            // If the requested tab doesn't exist, find and show the first available tab
+            const availableTabs = ['maintenance', 'parts', 'scheduled'];
+            for (const tab of availableTabs) {
+                const tabContent = document.getElementById('content-' + tab);
+                const tabButton = document.getElementById('tab-' + tab);
+                if (tabContent && tabButton) {
+                    showTab(tab);
+                    return;
+                }
+            }
             return;
         }
         
@@ -666,8 +707,23 @@
             });
         });
         
-        // Restore the active tab from localStorage
-        restoreActiveTab();
+        // Restore the active tab from localStorage, or show first available
+        const savedTab = localStorage.getItem('activeTab');
+        const savedTabButton = document.getElementById('tab-' + savedTab);
+        
+        if (savedTabButton) {
+            showTab(savedTab);
+        } else {
+            // Show the first available tab
+            const availableTabs = ['maintenance', 'parts', 'scheduled'];
+            for (const tab of availableTabs) {
+                const tabButton = document.getElementById('tab-' + tab);
+                if (tabButton) {
+                    showTab(tab);
+                    break;
+                }
+            }
+        }
     });
 
     function toggleHoursField() {
@@ -871,10 +927,46 @@
     // Status Modal functions
     function openStatusModal() {
         document.getElementById('statusModal').classList.remove('hidden');
+        // Reset the mileage label when opening
+        updateMileageLabel();
     }
 
     function closeStatusModal() {
         document.getElementById('statusModal').classList.add('hidden');
+    }
+
+    function updateMileageLabel() {
+        const reasonSelect = document.getElementById('reasonSelect');
+        const mileageContext = document.getElementById('mileageContext');
+        const dateContext = document.getElementById('dateContext');
+        const mileageField = document.getElementById('mileageField');
+        
+        if (!reasonSelect || !mileageContext || !dateContext) return;
+        
+        const selectedReason = reasonSelect.value;
+        
+        // Update the label based on the reason
+        const contextMap = {
+            'Sold': 'Time of Sale',
+            'Crashed/Totaled': 'Time of Crash',
+            'Engine Blew Up': 'Time of Failure',
+            'Transmission Failed': 'Time of Failure',
+            'Too Expensive to Repair': 'Time of Decision',
+            'Traded In': 'Time of Trade-In',
+            'Stolen': 'Time of Theft',
+            'Other': 'Time of Event'
+        };
+        
+        const context = contextMap[selectedReason] || 'Event';
+        mileageContext.textContent = context;
+        dateContext.textContent = context;
+        
+        // Show/hide mileage field based on reason
+        if (selectedReason === 'Stolen') {
+            mileageField.style.display = 'none';
+        } else {
+            mileageField.style.display = 'block';
+        }
     }
 
     document.getElementById('statusModal')?.addEventListener('click', function(e) {

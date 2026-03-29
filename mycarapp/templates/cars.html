@@ -251,7 +251,7 @@
 
     <!-- Add Car Modal -->
     <div id="addCarModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
             <button onclick="closeAddCarModal()" class="modal-close">&times;</button>
             
             <div class="text-center mb-6">
@@ -266,6 +266,7 @@
                                 class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
                                         placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
                                         focus:border-blue-500 sm:text-sm">
+                            <option value="">Select Type</option>
                             <option value="Car">Car</option>
                             <option value="Truck">Truck</option>
                             <option value="Motorcycle">Motorcycle</option>
@@ -303,51 +304,61 @@
                                 placeholder="e.g., 2023">
                         </div>
                         <div>
-                            <label for="purchase_date" class="block text-sm font-medium text-gray-700">Purchase Date</label>
-                            <input id="purchase_date" name="purchase_date" type="date"
+                            <label for="vin" class="block text-sm font-medium text-gray-700">VIN Number (optional)</label>
+                            <input id="vin" name="vin" type="text" 
                                 class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
                                     placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm">
+                                    focus:border-blue-500 sm:text-sm" 
+                                placeholder="e.g., 1HGCM82633A123456">
                         </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="image" class="block text-sm font-medium text-gray-700">Image</label>
-                            <input id="image" name="image" type="file" accept="image/*"
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm">
-                        </div>
-                        <div>
-                            <label for="sell_date" class="block text-sm font-medium text-gray-700">Sell Date (optional)</label>
-                            <input id="sell_date" name="sell_date" type="date"
+                        <div id="purchase_mileage_field">
+                            <label for="purchase_mileage" class="block text-sm font-medium text-gray-700">Miles When Purchased (optional)</label>
+                            <input id="purchase_mileage" name="purchase_mileage" type="number" step="0.1"
                                 class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
                                     placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm">
+                                    focus:border-blue-500 sm:text-sm" 
+                                placeholder="e.g., 25000">
                         </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div id="purchase_hours_field" style="display: none;">
+                            <label for="purchase_hours" class="block text-sm font-medium text-gray-700">Hours When Purchased (optional)</label>
+                            <input id="purchase_hours" name="purchase_hours" type="number" step="0.1"
+                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                    focus:border-blue-500 sm:text-sm" 
+                                placeholder="e.g., 150.5">
+                        </div>
+                        <div id="miles-field" style="display: none;">
+                            <label for="miles" class="block text-sm font-medium text-gray-700">Current Miles (optional)</label>
+                            <input id="miles" name="miles" type="number" step="0.1"
+                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                    focus:border-blue-500 sm:text-sm" 
+                                placeholder="e.g., 35000">
+                        </div>
                         <div id="hours-field" style="display: none;">
-                            <label for="hours" class="block text-sm font-medium text-gray-700">Hours (Boat Only)</label>
+                            <label for="hours" class="block text-sm font-medium text-gray-700">Current Hours (Boat Only)</label>
                             <input id="hours" name="hours" type="number" step="0.1"
                                 class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
                                     placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
                                     focus:border-blue-500 sm:text-sm" 
                                 placeholder="e.g., 250.5">
                         </div>
-                        <div id="miles-field" style="display: none;">
-                            <label for="miles" class="block text-sm font-medium text-gray-700">Miles</label>
-                            <input id="miles" name="miles" type="number" step="0.1"
+                        <div>
+                            <label for="purchase_date" class="block text-sm font-medium text-gray-700">Purchase Date (optional)</label>
+                            <input id="purchase_date" name="purchase_date" type="date"
                                 class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
                                     placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., 25000">
+                                    focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="image" class="block text-sm font-medium text-gray-700">Vehicle Image (optional)</label>
+                            <input id="image" name="image" type="file" accept="image/*"
+                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                                    text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                    focus:border-blue-500 sm:text-sm">
                         </div>
                     </div>
-                </div>
-
+                    
                 <div class="mt-6">
                     <button type="submit" 
                         class="group relative w-full flex justify-center py-3 px-4 border border-transparent 
@@ -412,16 +423,47 @@
 <script>
 
     function openAddCarModal() {
+        console.log('Opening add car modal');
         document.getElementById('addCarModal').classList.add('active');
         document.body.style.overflow = 'hidden';
+        // Initialize field visibility
+        toggleHoursField();
     }
-    
+
     function closeAddCarModal() {
+        console.log('Closing add car modal');
         document.getElementById('addCarModal').classList.remove('active');
         document.body.style.overflow = 'auto';
     }
+
+    function toggleHoursField() {        
+        const vehicleSelect = document.getElementById('vehicle-type') || document.querySelector('select[name="vehicle_type"]');
+        if (!vehicleSelect) {
+            return;
+        }
+        
+        const vehicleType = vehicleSelect.value;
+        const hoursField = document.getElementById('hours-field');
+        const milesField = document.getElementById('miles-field');
+        const purchaseHoursField = document.getElementById('purchase_hours_field');
+        const purchaseMileageField = document.getElementById('purchase_mileage_field');
+                
+        if (vehicleType === 'Boat') {
+            // Show hours fields, hide miles fields
+            hoursField.style.display = 'block';
+            purchaseHoursField.style.display = 'block';
+            milesField.style.display = 'none';
+            purchaseMileageField.style.display = 'none';
+        } else {
+            // Show miles fields, hide hours fields
+            hoursField.style.display = 'none';
+            purchaseHoursField.style.display = 'none';
+            milesField.style.display = 'block';
+            purchaseMileageField.style.display = 'block';
+        }
+    }
     
-    // Handle form submission
+    // Handle form submission - use fetch for better control
     document.getElementById('addCarForm').addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -433,21 +475,24 @@
         })
         .then(response => {
             if (response.ok) {
-                // Close modal and reload page
+                // Close modal and reload page to show new vehicle
                 closeAddCarModal();
                 window.location.reload();
             } else {
-                // Show error
-                alert('Error adding vehicle. Please try again.');
+                // Show error and fallback to normal submission
+                console.error('Server responded with error:', response.status);
+                alert('Error adding vehicle. Submitting normally...');
+                this.submit();
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            console.error('Fetch error:', error);
             // Fallback to normal form submission
+            alert('Network error. Submitting normally...');
             this.submit();
         });
     });
-
+        
     // Close modal when clicking outside
     document.getElementById('addCarModal').addEventListener('click', function(e) {
         if (e.target === this) {
@@ -462,55 +507,15 @@
         }
     });
 
-    function toggleHoursField() {
-        const vehicleType = document.getElementById('vehicle-type').value;
-        const hoursField = document.getElementById('hours-field');
-        const milesField = document.getElementById('miles-field');
-                
-        if (vehicleType === 'Boat') {
-            hoursField.style.display = 'block';
-            milesField.style.display = 'none';
-        } else {
-            hoursField.style.display = 'none';
-            milesField.style.display = 'block';
-        }
-    }
-
-    // Add event listener
+    // Add event listener for vehicle type change
     document.addEventListener('DOMContentLoaded', function() {
-        
-        // Only initialize when modal is opened
-        const addCarButton = document.querySelector('[onclick="openAddCarModal()"]');
-        if (addCarButton) {
-            addCarButton.addEventListener('click', function() {
-                setTimeout(function() { // Small delay to ensure modal is rendered
-                    setupVehicleTypeToggle();
-                }, 200); // Increased delay to 200ms
-            });
+        const vehicleSelect = document.getElementById('vehicle-type');
+        if (vehicleSelect) {
+            vehicleSelect.addEventListener('change', toggleHoursField);
+            toggleHoursField(); // Initialize on page load
         }
     });
 
-    function setupVehicleTypeToggle() {
-        const vehicleSelect = document.getElementById('vehicle-type');
-        
-        if (vehicleSelect) {
-            
-            // Remove any existing listeners to prevent duplicates
-            vehicleSelect.removeEventListener('change', toggleHoursField);
-            
-            vehicleSelect.addEventListener('change', function() {
-                toggleHoursField();
-            });
-            
-            // Initial toggle after a small delay
-            setTimeout(function() {
-                toggleHoursField();
-            }, 50);
-        } else {
-            console.log('Vehicle select not found!'); // Debug line
-        }
-    }
-    
     function showVehicleType(vehicleType) {
         // Hide all vehicle sections
         const allSections = document.querySelectorAll('.vehicle-section');

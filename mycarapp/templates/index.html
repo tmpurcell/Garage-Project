@@ -25,10 +25,12 @@
         padding: 2rem;
         border-radius: 0.5rem;
         max-width: 90%;
+        max-width: 650px;
         max-height: 90vh;
         overflow-y: auto;
         position: relative;
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        margin: 20px;
     }
 
     .modal-close {
@@ -73,36 +75,112 @@
         border: 6px solid transparent;
         border-top-color: white;
     }
+    
+    /* Hero section styles */
+    .hero-section {
+        padding: 6rem 1rem;
+        margin-bottom: 3rem;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.9) 100%);
+        backdrop-filter: blur(10px);
+        border-radius: 1.5rem;
+        border: 2px solid rgba(220, 38, 38, 0.1);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 20px 25px -5px rgba(220, 38, 38, 0.1);
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .hero-section:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.2), 0 25px 30px -5px rgba(220, 38, 38, 0.15);
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, transparent 30%, rgba(220, 38, 38, 0.02) 50%, transparent 70%),
+                    linear-gradient(-45deg, transparent 30%, rgba(234, 88, 12, 0.02) 50%, transparent 70%);
+        pointer-events: none;
+    }
+    
+    .hero-section::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(220, 38, 38, 0.03) 0%, transparent 70%);
+        animation: float 20s ease-in-out infinite;
+        pointer-events: none;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        33% { transform: translate(30px, -30px) rotate(120deg); }
+        66% { transform: translate(-20px, 20px) rotate(240deg); }
+    }
 </style>
 {% if 'user_id' not in session %}
     <script>
         window.location.href = "{{ url_for('landing') }}";
     </script>
 {% else %}
-    <!-- Your existing homepage content for logged-in users -->
-    <div class="text-center py-12">
-        <h1 class="text-4xl font-bold text-gray-900 mb-4">
-            Welcome to Your Digital Garage 🏁
-        </h1>
-        <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Track, maintain, and manage your vehicle collection with ease. Keep detailed records of maintenance, 
-            aftermarket parts, and scheduled services all in one place.
-        </p>
-        
-        <div class="space-x-4">
-            <a href="{{ url_for('cars') }}" class="bg-racing-red hover:bg-racing-red-dark text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors">
-                View My Garage
-            </a>
-            <button onclick="openAddCarModal()" class="bg-garage-gray hover:bg-garage-gray-dark text-white font-bold py-3 px-6 rounded-lg text-lg transition-colors">
-                <i class="fas fa-plus mr-2"></i>
-                Add New Vehicle
-            </button>
+    <!-- Enhanced Hero Section for logged-in users -->
+    <div class="hero-section text-center relative">
+        <div class="relative z-10">
+            <div class="mb-6">
+                <span class="inline-block px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-full text-sm font-semibold mb-4 animate-pulse">
+                    🏁 Welcome Back!
+                </span>
+            </div>
+            <h1 class="text-6xl font-bold text-black-900 mb-6 tracking-tight leading-tight">
+                Your Digital
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">
+                    Garage
+                </span>
+                🏁
+            </h1>
+            <p class="text-2xl text-gray-800 mb-10 max-w-4xl mx-auto tracking-wide font-medium leading-relaxed">
+                Track, maintain, and manage your vehicle collection with ease. Keep detailed records of maintenance, 
+                aftermarket parts, and scheduled services all in one beautiful, intuitive platform.
+            </p>
+            
+            <div class="flex flex-wrap justify-center gap-6 mb-8">
+                <a href="{{ url_for('cars') }}" class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-xl text-xl transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-red-500/25 inline-flex items-center">
+                    <i class="fas fa-garage mr-2"></i>
+                    View My Garage
+                </a>
+                <button onclick="openAddCarModal()" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-4 px-8 rounded-xl text-xl transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-gray-500/25 inline-flex items-center">
+                    <i class="fas fa-plus mr-2"></i>
+                    Add New Vehicle
+                </button>
+            </div>
+            
+            <div class="flex justify-center space-x-8 text-gray-600">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                    <span>{{ cars|length if cars else 0 }} Vehicles</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-tools text-blue-500 mr-2"></i>
+                    <span>Service Tracking</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-chart-line text-purple-500 mr-2"></i>
+                    <span>Analytics</span>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Add Car Modal -->
     <div id="addCarModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
             <button onclick="closeAddCarModal()" class="modal-close">&times;</button>
             
             <div class="text-center mb-6">
@@ -117,14 +195,12 @@
                                 class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
                                         placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
                                         focus:border-blue-500 sm:text-sm">
+                            <option value="">Select Type</option>
                             <option value="Car">Car</option>
                             <option value="Truck">Truck</option>
                             <option value="Motorcycle">Motorcycle</option>
-                            <option value="SUV">SUV</option>
-                            <option value="Van">Van</option>
                             <option value="Boat">Boat</option>
                             <option value="RV">RV</option>
-                            <option value="Other">Other</option>
                         </select>
                     </div>
                     
@@ -156,28 +232,52 @@
                                     focus:border-blue-500 sm:text-sm" 
                                 placeholder="e.g., 2023">
                         </div>
-                        <div id="miles-field" style="display: none;">
-                            <label for="miles" class="block text-sm font-medium text-gray-700">Miles</label>
-                            <input id="miles" name="miles" type="number" step="0.1"
+                        <div>
+                            <label for="vin" class="block text-sm font-medium text-gray-700">VIN Number (optional)</label>
+                            <input id="vin" name="vin" type="text" 
+                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                    focus:border-blue-500 sm:text-sm" 
+                                placeholder="e.g., 1HGCM82633A123456">
+                        </div>
+                        <div id="purchase_mileage_field">
+                            <label for="purchase_mileage" class="block text-sm font-medium text-gray-700">Miles When Purchased (optional)</label>
+                            <input id="purchase_mileage" name="purchase_mileage" type="number" step="0.1"
                                 class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
                                     placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
                                     focus:border-blue-500 sm:text-sm" 
                                 placeholder="e.g., 25000">
                         </div>
-                        <div>
-                            <label for="image" class="block text-sm font-medium text-gray-700">Image</label>
-                            <input id="image" name="image" type="file" accept="image/*"
+                        <div id="purchase_hours_field" style="display: none;">
+                            <label for="purchase_hours" class="block text-sm font-medium text-gray-700">Hours When Purchased (optional)</label>
+                            <input id="purchase_hours" name="purchase_hours" type="number" step="0.1"
                                 class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm">
+                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                    focus:border-blue-500 sm:text-sm" 
+                                placeholder="e.g., 150.5">
+                        </div>
+                        <div id="miles-field" style="display: none;">
+                            <label for="miles" class="block text-sm font-medium text-gray-700">Current Miles (optional)</label>
+                            <input id="miles" name="miles" type="number" step="0.1"
+                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                    focus:border-blue-500 sm:text-sm" 
+                                placeholder="e.g., 35000">
                         </div>
                         <div id="hours-field" style="display: none;">
-                            <label for="hours" class="block text-sm font-medium text-gray-700">Hours (Boat Only)</label>
+                            <label for="hours" class="block text-sm font-medium text-gray-700">Current Hours (Boat Only)</label>
                             <input id="hours" name="hours" type="number" step="0.1"
                                 class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
                                     placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
                                     focus:border-blue-500 sm:text-sm" 
                                 placeholder="e.g., 250.5">
+                        </div>
+                        <div>
+                            <label for="image" class="block text-sm font-medium text-gray-700">Vehicle Image (optional)</label>
+                            <input id="image" name="image" type="file" accept="image/*"
+                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                                    text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                    focus:border-blue-500 sm:text-sm">
                         </div>
                     </div>
                 </div>
@@ -374,17 +474,20 @@
 
 <script>
     function openAddCarModal() {
+        console.log('Opening add car modal');
         document.getElementById('addCarModal').classList.add('active');
         document.body.style.overflow = 'hidden';
+        // Initialize field visibility
+        toggleHoursField();
     }
 
     function closeAddCarModal() {
+        console.log('Closing add car modal');
         document.getElementById('addCarModal').classList.remove('active');
         document.body.style.overflow = 'auto';
     }
 
     function toggleHoursField() {        
-        // Use the correct ID for car_detail.html
         const vehicleSelect = document.getElementById('vehicle-type') || document.querySelector('select[name="vehicle_type"]');
         if (!vehicleSelect) {
             return;
@@ -393,18 +496,27 @@
         const vehicleType = vehicleSelect.value;
         const hoursField = document.getElementById('hours-field');
         const milesField = document.getElementById('miles-field');
+        const purchaseHoursField = document.getElementById('purchase_hours_field');
+        const purchaseMileageField = document.getElementById('purchase_mileage_field');
                 
         if (vehicleType === 'Boat') {
+            // Show hours fields, hide miles fields
             hoursField.style.display = 'block';
+            purchaseHoursField.style.display = 'block';
             milesField.style.display = 'none';
+            purchaseMileageField.style.display = 'none';
         } else {
+            // Show miles fields, hide hours fields
             hoursField.style.display = 'none';
+            purchaseHoursField.style.display = 'none';
             milesField.style.display = 'block';
+            purchaseMileageField.style.display = 'block';
         }
     }
 
-    // Handle form submission
+    // Handle form submission - use normal submission for better compatibility
     document.getElementById('addCarForm').addEventListener('submit', function(e) {
+        // Let the form submit normally, but override the redirect
         e.preventDefault();
         
         const formData = new FormData(this);
@@ -415,17 +527,20 @@
         })
         .then(response => {
             if (response.ok) {
-                // Close modal and reload page
+                // Close modal and redirect to cars page
                 closeAddCarModal();
-                window.location.reload();
+                window.location.href = "{{ url_for('cars') }}";
             } else {
-                // Show error
-                alert('Error adding vehicle. Please try again.');
+                // Show error and fallback to normal submission
+                console.error('Server responded with error:', response.status);
+                alert('Error adding vehicle. Submitting normally...');
+                this.submit();
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            console.error('Fetch error:', error);
             // Fallback to normal form submission
+            alert('Network error. Submitting normally...');
             this.submit();
         });
     });
@@ -443,17 +558,6 @@
             closeAddCarModal();
         }
     });
-
-    function toggleHoursField() {
-        const vehicleType = document.getElementById('vehicle-type').value;
-        const hoursField = document.getElementById('hours-field');
-        
-        if (vehicleType === 'Boat') {
-            hoursField.style.display = 'block';
-        } else {
-            hoursField.style.display = 'none';
-        }
-    }
 
     // Add event listener
     document.addEventListener('DOMContentLoaded', function() {
