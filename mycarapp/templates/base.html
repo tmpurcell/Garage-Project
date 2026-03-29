@@ -27,6 +27,44 @@
                 backdrop-filter: blur(8px);
                 background-color: rgba(31, 41, 55, 0.95); /* semi-transparent gray-800 */
             }
+            
+            /* Drag and Drop Styles */
+            .drag-drop-area {
+                border: 2px dashed #cbd5e1;
+                border-radius: 8px;
+                padding: 2rem;
+                text-align: center;
+                background-color: #f8fafc;
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+            
+            .drag-drop-area:hover {
+                border-color: #3b82f6;
+                background-color: #eff6ff;
+            }
+            
+            .drag-drop-area.dragover {
+                border-color: #3b82f6;
+                background-color: #dbeafe;
+                transform: scale(1.02);
+            }
+            
+            .drag-drop-content {
+                pointer-events: none;
+            }
+            
+            .drag-drop-content svg {
+                transition: color 0.3s ease;
+            }
+            
+            .drag-drop-area:hover .drag-drop-content svg {
+                color: #3b82f6;
+            }
+            
+            .drag-drop-area.dragover .drag-drop-content svg {
+                color: #2563eb;
+            }
         </style>
     </head>
     <body class="bg-gray-300 text-gray-800 min-h-screen font-sans flex flex-col h-full">
@@ -194,6 +232,49 @@
                         e.stopPropagation();
                     });
                 }
+            });
+            
+            // Drag and Drop Functions
+            function handleDragOver(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                const dropZone = event.currentTarget;
+                dropZone.classList.add('dragover');
+            }
+            
+            function handleDragLeave(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                const dropZone = event.currentTarget;
+                dropZone.classList.remove('dragover');
+            }
+            
+            function handleDrop(event, inputId) {
+                event.preventDefault();
+                event.stopPropagation();
+                const dropZone = event.currentTarget;
+                dropZone.classList.remove('dragover');
+                
+                const files = event.dataTransfer.files;
+                if (files.length > 0) {
+                    const fileInput = document.getElementById(inputId);
+                    if (fileInput) {
+                        fileInput.files = files;
+                        
+                        // Trigger change event to show file was selected
+                        const changeEvent = new Event('change', { bubbles: true });
+                        fileInput.dispatchEvent(changeEvent);
+                    }
+                }
+            }
+            
+            // Prevent default drag behaviors
+            document.addEventListener('dragover', function(e) {
+                e.preventDefault();
+            });
+            
+            document.addEventListener('drop', function(e) {
+                e.preventDefault();
             });
         </script>
     </body>
