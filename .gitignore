@@ -5,6 +5,14 @@ mycarapp/venv/
 __pycache__/
 *.pyc
 
-# db files
-cars.db
-mygarage.db
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# User uploads
+uploads/
+
+# Environment variables
+.env
+*.env
