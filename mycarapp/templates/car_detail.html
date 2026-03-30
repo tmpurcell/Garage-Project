@@ -458,7 +458,8 @@
                             data-brand="{{ part[3] or '' }}"
                             data-install-date="{{ part[4] or '' }}"
                             data-cost="{{ part[5] or '' }}"
-                            data-notes="{{ part[6] or '' }}">
+                            data-notes="{{ part[6] or '' }}"
+                            data-receipt="{{ part[7] or '' }}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                         </svg>
@@ -541,7 +542,7 @@
 
 <!-- Edit Part Modal -->
 <div id="editPartModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
         <div class="p-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold text-gray-800">Edit Aftermarket Part</h2>
@@ -552,7 +553,7 @@
                 </button>
             </div>
             
-            <form id="editPartForm" method="POST" class="space-y-4">
+            <form id="editPartForm" method="POST" enctype="multipart/form-data" class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block font-medium mb-1">Part Name *</label>
                     <input type="text" id="edit_part_name" name="part_name" class="border p-2 w-full rounded" required>
@@ -569,11 +570,30 @@
                     <label class="block font-medium mb-1">Cost</label>
                     <input type="number" step="0.01" id="edit_cost" name="cost" class="border p-2 w-full rounded">
                 </div>
-                <div>
+                <div class="col-span-2">
                     <label class="block font-medium mb-1">Notes</label>
                     <textarea id="edit_notes" name="notes" class="border p-2 w-full rounded" rows="3"></textarea>
                 </div>
-                <div class="flex gap-3 pt-4">
+                <div class="col-span-2">
+                    <label class="block font-medium mb-1">Receipt Image (optional)</label>
+                    <div class="drag-drop-area" id="edit-part-drop-zone" 
+                        ondrop="handleDrop(event, 'edit_part_receipt_image')" 
+                        ondragover="handleDragOver(event)" 
+                        ondragleave="handleDragLeave(event)">
+                        <div class="drag-drop-content">
+                            <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                            </svg>
+                            <p class="text-sm text-gray-600">Drag & drop receipt image here or</p>
+                            <input type="file" id="edit_part_receipt_image" name="receipt_image" accept="image/*,.pdf" class="border p-2 w-full rounded mt-2">
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-1">Upload a new receipt image (will replace existing receipt)</p>
+                    <div id="edit-current-receipt" class="mt-2 hidden">
+                        <p class="text-sm text-gray-600">Current receipt: <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">View Current Receipt</a></p>
+                    </div>
+                </div>
+                <div class="col-span-2 flex gap-3 pt-4">
                     <button type="submit" class="flex-1 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">Save Changes</button>
                     <button type="button" onclick="closeEditPartModal()" class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
                 </div>
@@ -861,6 +881,19 @@
             document.getElementById('edit_install_date').value = editBtn.dataset.installDate;
             document.getElementById('edit_cost').value = editBtn.dataset.cost;
             document.getElementById('edit_notes').value = editBtn.dataset.notes;
+            
+            // Handle receipt display
+            const receiptImage = editBtn.dataset.receipt;
+            const currentReceiptDiv = document.getElementById('edit-current-receipt');
+            if (receiptImage) {
+                currentReceiptDiv.classList.remove('hidden');
+                const receiptLink = currentReceiptDiv.querySelector('a');
+                receiptLink.href = `{{ url_for('uploaded_file', filename='') }}${receiptImage}`;
+                receiptLink.textContent = 'View Current Receipt';
+            } else {
+                currentReceiptDiv.classList.add('hidden');
+            }
+            
             document.getElementById('editPartModal').classList.remove('hidden');
         }
     });

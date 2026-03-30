@@ -978,12 +978,39 @@ def edit_part(car_id, part_id):
     cost = request.form.get("cost") or None
     notes = request.form.get("notes") or None
     
+    # Handle receipt image upload
+    receipt_image = None
+    if 'receipt_image' in request.files:
+        file = request.files['receipt_image']
+        if file.filename != '' and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filename = f"{int(time.time())}_{filename}"
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            
+            # Compress image if it's an image file (not PDF)
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+                compressed_data = compress_image(file.stream)
+                with open(file_path, 'wb') as f:
+                    f.write(compressed_data)
+            else:
+                # Save PDF as-is
+                file.save(file_path)
+            
+            receipt_image = filename
+    
     with sqlite3.connect(DATABASE) as conn:
         c = conn.cursor()
+        
+        # Get current receipt image if no new one is uploaded
+        if not receipt_image:
+            current_receipt = c.execute("SELECT receipt_image FROM aftermarket_parts WHERE id = ? AND car_id = ?", 
+                                      (part_id, car_id)).fetchone()
+            receipt_image = current_receipt[0] if current_receipt and current_receipt[0] else None
+        
         c.execute("""UPDATE aftermarket_parts 
-                    SET part_name = ?, brand = ?, install_date = ?, cost = ?, notes = ?
+                    SET part_name = ?, brand = ?, install_date = ?, cost = ?, notes = ?, receipt_image = ?
                     WHERE id = ? AND car_id = ?""",
-                (part_name, brand, install_date, cost, notes, part_id, car_id))
+                (part_name, brand, install_date, cost, notes, receipt_image, part_id, car_id))
         conn.commit()
     return redirect(url_for("car_detail", car_id=car_id))
 
