@@ -1035,6 +1035,31 @@
             if (label) label.textContent = `Selected: ${file.name}`;
         }
     }
+
+    // Add click handlers to drag-drop areas
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropZones = document.querySelectorAll('.drag-drop-area');
+        dropZones.forEach(zone => {
+            zone.addEventListener('click', function() {
+                const input = this.querySelector('input[type="file"]');
+                if (input) {
+                    input.click();
+                }
+            });
+        });
+
+        // Handle file input changes
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        fileInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                const dropZone = this.closest('.drag-drop-area');
+                if (dropZone && this.files[0]) {
+                    const label = dropZone.querySelector('p');
+                    if (label) label.textContent = `Selected: ${this.files[0].name}`;
+                }
+            });
+        });
+    });
 </script>
 
 <style>
