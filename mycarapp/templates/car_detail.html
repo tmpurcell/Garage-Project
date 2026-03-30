@@ -395,6 +395,20 @@
     {% endif %}
 </div>
     
+<!-- Aftermarket Parts Tab -->
+<div id="content-parts" class="tab-content hidden">
+    <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold">Installed Parts</h3>
+        <div class="flex gap-2">
+            <button onclick="openAddPartModal()" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Add Part
+            </button>
+        </div>
+    </div>
+
     {% if parts %}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         {% for part in parts %}
@@ -565,17 +579,6 @@
                 </svg>
                 Schedule Maintenance
             </button>
-            <button onclick="openEditModal()" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                </svg>
-                Edit
-            </button>
-            {% if car['status'] == 'active' %}
-                <button onclick="openStatusModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                    Remove From Garage
-                </button>
-            {% endif %}
         </div>
     </div>
 
@@ -731,8 +734,12 @@
             button.classList.add('border-transparent', 'text-gray-500');
         });
         const content = document.getElementById('content-' + tabName);
-        if (content) {
+        const button = document.getElementById('tab-' + tabName);
+        if (content && button) {
             content.classList.remove('hidden');
+            button.classList.remove('border-transparent', 'text-gray-500');
+            button.classList.add('border-gray-700', 'text-gray-700');
+            saveActiveTab(tabName);
         } else {
             const availableTabs = ['maintenance', 'parts', 'scheduled'];
             for (const tab of availableTabs) {
@@ -743,12 +750,6 @@
                     return;
                 }
             }
-            return;
-        }
-        const activeTab = document.getElementById('tab-' + tabName);
-        if (activeTab) {
-            activeTab.classList.remove('border-transparent', 'text-gray-500');
-            activeTab.classList.add('border-gray-700', 'text-gray-700');
             saveActiveTab(tabName);
         }
     }
@@ -1003,6 +1004,20 @@
     .drag-drop-area.drag-over {
         border-color: #6b7280;
         background-color: #f9fafb;
+    }
+    
+    /* Tab Styles */
+    .tab-content {
+        display: block;
+    }
+    .tab-content.hidden {
+        display: none;
+    }
+    .tab-button {
+        transition: all 0.3s ease;
+    }
+    .tab-button:hover {
+        cursor: pointer;
     }
 </style>
 
