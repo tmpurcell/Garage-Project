@@ -8,6 +8,8 @@ from functools import wraps
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from urllib.parse import urlparse
+from PIL import Image
+import io
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'  # Change this to a secure secret key
@@ -33,6 +35,44 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def compress_image(file_stream, max_size=(1200, 1200), quality=85):
+    """
+    Compress an image to reduce file size while maintaining quality
+    Args:
+        file_stream: The uploaded file stream
+        max_size: Maximum dimensions (width, height)
+        quality: JPEG quality (1-100)
+    Returns:
+        Compressed image bytes
+    """
+    try:
+        # Open the image
+        img = Image.open(file_stream)
+        
+        # Convert RGBA to RGB if necessary
+        if img.mode in ('RGBA', 'LA'):
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+            img = background
+        elif img.mode == 'P':
+            img = img.convert('RGB')
+        
+        # Resize if larger than max_size
+        if img.size[0] > max_size[0] or img.size[1] > max_size[1]:
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+        
+        # Compress and save to bytes
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format='JPEG', quality=quality, optimize=True)
+        img_byte_arr.seek(0)
+        
+        return img_byte_arr.getvalue()
+    except Exception as e:
+        print(f"Error compressing image: {e}")
+        # Return original file if compression fails
+        file_stream.seek(0)
+        return file_stream.read()
 
 def url_parse(url):
     return urlparse(url)
@@ -572,10 +612,19 @@ def add_car():
                 filename = secure_filename(file.filename)
                 filename = f"{int(time.time())}_{filename}"
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                file.save(file_path)
+                
+                # Compress image if it's an image file (not PDF)
+                if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+                    compressed_data = compress_image(file.stream)
+                    with open(file_path, 'wb') as f:
+                        f.write(compressed_data)
+                else:
+                    # Save PDF as-is
+                    file.save(file_path)
+                
                 image_path = filename
             elif file.filename != '':
-                flash('Invalid file type. Please upload an image file (PNG, JPG, JPEG, GIF, WEBP)', 'error')
+                flash('Invalid file type. Please upload an image file (PNG, JPG, JPEG, GIF, WEBP, PDF)', 'error')
                 return redirect(url_for('add_car'))
 
         # Save to database
@@ -693,10 +742,19 @@ def edit_car(car_id):
                     filename = secure_filename(file.filename)
                     filename = f"{int(time.time())}_{filename}"
                     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                    file.save(file_path)
+                    
+                    # Compress image if it's an image file (not PDF)
+                    if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+                        compressed_data = compress_image(file.stream)
+                        with open(file_path, 'wb') as f:
+                            f.write(compressed_data)
+                    else:
+                        # Save PDF as-is
+                        file.save(file_path)
+                    
                     image_path = filename
                 else:
-                    flash('Invalid file type. Please upload an image file (PNG, JPG, JPEG, GIF, WEBP)', 'error')
+                    flash('Invalid file type. Please upload an image file (PNG, JPG, JPEG, GIF, WEBP, PDF)', 'error')
                     return redirect(url_for('edit_car', car_id=car_id))
         
         try:
@@ -733,7 +791,16 @@ def add_maintenance(car_id):
             filename = secure_filename(file.filename)
             filename = f"{int(time.time())}_{filename}"
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(file_path)
+            
+            # Compress image if it's an image file (not PDF)
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+                compressed_data = compress_image(file.stream)
+                with open(file_path, 'wb') as f:
+                    f.write(compressed_data)
+            else:
+                # Save PDF as-is
+                file.save(file_path)
+            
             receipt_image = filename
     
     with sqlite3.connect(DATABASE) as conn:
@@ -763,7 +830,16 @@ def edit_maintenance(car_id, record_id):
             filename = secure_filename(file.filename)
             filename = f"{int(time.time())}_{filename}"
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(file_path)
+            
+            # Compress image if it's an image file (not PDF)
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+                compressed_data = compress_image(file.stream)
+                with open(file_path, 'wb') as f:
+                    f.write(compressed_data)
+            else:
+                # Save PDF as-is
+                file.save(file_path)
+            
             receipt_image = filename
     
     with sqlite3.connect(DATABASE) as conn:
@@ -816,7 +892,16 @@ def add_part(car_id):
             filename = secure_filename(file.filename)
             filename = f"{int(time.time())}_{filename}"
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(file_path)
+            
+            # Compress image if it's an image file (not PDF)
+            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+                compressed_data = compress_image(file.stream)
+                with open(file_path, 'wb') as f:
+                    f.write(compressed_data)
+            else:
+                # Save PDF as-is
+                file.save(file_path)
+            
             receipt_image = filename
     
     with sqlite3.connect(DATABASE) as conn:
