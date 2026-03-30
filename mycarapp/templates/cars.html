@@ -6,12 +6,9 @@
     .vehicle-section {
         transition: all 0.3s ease-in-out;
     }
-
     .vehicle-section.hidden {
         display: none;
     }
-
-    /* Modal styles */
     .modal-overlay {
         display: none;
         position: fixed;
@@ -24,11 +21,9 @@
         justify-content: center;
         align-items: center;
     }
-
     .modal-overlay.active {
         display: flex;
     }
-
     .modal-content {
         background: white;
         padding: 2rem;
@@ -39,7 +34,6 @@
         position: relative;
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     }
-
     .modal-close {
         position: absolute;
         top: 1rem;
@@ -52,31 +46,48 @@
         padding: 0.25rem;
         line-height: 1;
     }
-
     .modal-close:hover {
         color: #374151;
     }
+    .drag-drop-area {
+        border: 2px dashed #d1d5db;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        text-align: center;
+        transition: border-color 0.2s, background-color 0.2s;
+        cursor: pointer;
+    }
+    .drag-drop-area.drag-over {
+        border-color: #6b7280;
+        background-color: #f9fafb;
+    }
 </style>
-
 
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-8">
         <h1 class="text-3xl font-bold text-gray-800">My Garage</h1>
     </div>
 
+    {% set vehicle_types = ['Car', 'Truck', 'Motorcycle', 'Boat', 'RV'] %}
+    {% set icon_map = {
+        'Car': 'fa-car',
+        'Truck': 'fa-truck',
+        'Motorcycle': 'fa-motorcycle',
+        'Boat': 'fa-ship',
+        'RV': 'fa-campground',
+    } %}
+
     <!-- Vehicle Type Tabs -->
     <div class="mb-8">
         <div class="flex flex-wrap gap-2 items-center border-b border-gray-200">
-            {% set vehicle_types = ['Car', 'Truck', 'Motorcycle', 'Boat', 'RV'] %}
-            {% set icon_map = {
-                'Car': 'fa-car',
-                'Truck': 'fa-truck',
-                'Motorcycle': 'fa-motorcycle',
-                'Boat': 'fa-ship',
-                'RV': 'fa-campground',
-            } %}
-            
-            <!-- Vehicle Type Tabs -->
+            {% set total_all_vehicles = active_cars|length + past_cars|length %}
+            <button onclick="showVehicleType('All')" 
+                    id="tab-all"
+                    class="px-4 py-2 mb-2 mr-2 transition-colors flex items-center gap-2 border-b-2 border-transparent hover:border-blue-500 bg-blue-600 text-white border-blue-600">
+                <i class="fas fa-th"></i>
+                All Vehicles
+                <span class="bg-blue-800 text-xs px-2 py-1 rounded-full">{{ total_all_vehicles }}</span>
+            </button>
             {% for vehicle_type in vehicle_types %}
                 {% set active_count = active_cars_grouped.get(vehicle_type, [])|length %}
                 {% set past_count = past_cars_grouped.get(vehicle_type, [])|length %}
@@ -84,39 +95,28 @@
                 {% if total_count > 0 %}
                 <button onclick="showVehicleType('{{ vehicle_type }}')" 
                         id="tab-{{ vehicle_type.lower() }}"
-                        class="px-4 py-2 mb-2 mr-2 transition-colors flex items-center gap-2 border-b-2 border-transparent hover:border-blue-500
-                            {% if loop.first %}bg-blue-600 text-white border-blue-600{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                        class="px-4 py-2 mb-2 mr-2 transition-colors flex items-center gap-2 border-b-2 border-transparent hover:border-blue-500 bg-gray-100 text-gray-700 hover:bg-gray-200">
                     <i class="fas {{ icon_map.get(vehicle_type, 'fa-question-circle') }}"></i>
                     {{ vehicle_type }}
-                    <span class="{% if loop.first %}bg-blue-800{% else %}bg-gray-600{% endif %} text-xs px-2 py-1 rounded-full">{{ total_count }}</span>
+                    <span class="bg-gray-600 text-white text-xs px-2 py-1 rounded-full">{{ total_count }}</span>
                 </button>
                 {% endif %}
             {% endfor %}
         </div>
     </div>
 
-    <!-- Empty State when no cars -->
     {% if not active_cars_grouped and not past_cars_grouped %}
+    <!-- Empty State -->
     <div class="text-center py-16">
         <div class="mb-8">
-            <i class="fas fa-garage text-6xl text-gray-300 mb-4"></i>
+            <i class="fas fa-car text-6xl text-gray-300 mb-4"></i>
             <h2 class="text-2xl font-semibold text-gray-600 mb-2">Your garage is empty!</h2>
             <p class="text-gray-500 mb-8">Start tracking your vehicles by adding your first car to the garage.</p>
         </div>
-        
-        <div class="space-y-4">
-            <button onclick="openAddCarModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition-colors inline-flex items-center">
-                <i class="fas fa-plus mr-3"></i>
-                Add Your First Vehicle
-            </button>
-            
-            <div class="text-sm text-gray-400">
-                <i class="fas fa-info-circle mr-2"></i>
-                Track maintenance, parts, and service schedules for all your vehicles
-            </div>
-        </div>
-        
-        <!-- Feature highlights -->
+        <button onclick="openAddCarModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition-colors inline-flex items-center">
+            <i class="fas fa-plus mr-3"></i>
+            Add Your First Vehicle
+        </button>
         <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             <div class="bg-gray-50 p-6 rounded-lg">
                 <i class="fas fa-wrench text-2xl text-blue-500 mb-3"></i>
@@ -135,112 +135,192 @@
             </div>
         </div>
     </div>
+
     {% else %}
 
-        <!-- Vehicle Sections -->
-        <div class="mb-12">
-            {% for vehicle_type in ['Car', 'Truck', 'Motorcycle', 'Boat', 'RV'] %}
-            {% set active_count = active_cars_grouped.get(vehicle_type, [])|length %}
-            {% set past_count = past_cars_grouped.get(vehicle_type, [])|length %}
-            {% if active_count > 0 or past_count > 0 %}
-            <div id="section-{{ vehicle_type.lower() }}" class="vehicle-section {% if vehicle_type != 'Car' %}hidden{% endif %}">
-                <h2 class="text-2xl font-semibold mb-6 text-gray-700">{{ vehicle_type }}s</h2>
-                
-                <!-- Active Vehicles -->
-                {% if active_count > 0 %}
-                <div class="mb-8">
-                    <h3 class="text-lg font-medium mb-4 text-gray-600">Current {{ vehicle_type }}s</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {% for car in active_cars_grouped.get(vehicle_type, []) %}
-                        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                            {% if car.image_path %}
-                            <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" alt="{{ car.year }} {{ car.make }} {{ car.model }}" class="w-full h-48 object-cover">
-                            {% else %}
-                            <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-                                <i class="fas {{ icon_map.get(vehicle_type, 'fa-question-circle') }} text-4xl text-gray-400"></i>
-                            </div>
-                            {% endif %}
-                            <div class="p-4">
-                                <h3 class="text-xl font-semibold">{{ car.year }} {{ car.make }} {{ car.model }}</h3>
-                                <div class="mt-4 flex justify-between items-center">
-                                    <a href="{{ url_for('car_detail', car_id=car.id) }}" class="text-blue-600 hover:text-blue-800">View Details</a>
-                                    <span class="text-sm text-green-600">Active</span>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-                
-                <!-- Past Vehicles -->
-                {% if past_count > 0 %}
-                <div>
-                    <h3 class="text-lg font-medium mb-4 text-gray-600">Past {{ vehicle_type }}s</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {% for car in past_cars_grouped.get(vehicle_type, []) %}
-                        <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 relative group">
-                            <!-- Car Image with Overlay -->
-                            <div class="h-48 bg-gray-200 overflow-hidden relative">
+    <!-- Vehicle Sections -->
+    <div class="mb-12">
+
+        <!-- ======================== ALL VEHICLES TAB ======================== -->
+        <div id="section-all" class="vehicle-section">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700">All Vehicles</h2>
+
+            {% for vehicle_type in vehicle_types %}
+                {% set type_active = active_cars_grouped.get(vehicle_type, []) %}
+                {% set type_past = past_cars_grouped.get(vehicle_type, []) %}
+                {% if type_active or type_past %}
+                <div class="mb-10">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-600 flex items-center gap-2">
+                        <i class="fas {{ icon_map.get(vehicle_type, 'fa-question-circle') }}"></i>
+                        {{ vehicle_type }}s
+                    </h3>
+
+                    {% if type_active %}
+                    <p class="text-sm text-gray-500 mb-3">Current</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                        {% for car in type_active %}
+                        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+                            <div class="relative">
                                 {% if car.image_path %}
                                 <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" 
-                                    alt="{{ car.make }} {{ car.model }}" 
-                                    class="w-full h-full object-cover">
+                                    alt="{{ car.year }} {{ car.make }} {{ car.model }}" 
+                                    class="w-full h-48 object-cover">
                                 {% else %}
-                                <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400">
-                                    <i class="fas {{ icon_map.get(vehicle_type, 'fa-question-circle') }} text-4xl text-gray-500"></i>
+                                <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                                    <i class="fas {{ icon_map.get(car.vehicle_type, 'fa-question-circle') }} text-gray-400 text-4xl"></i>
                                 </div>
                                 {% endif %}
-                                
-                                <!-- Reason Banner Overlay -->
-                                {% if car.reason %}
-                                <div class="absolute top-0 left-0 right-0 bg-red-600 text-white px-3 py-2 text-sm font-medium">
-                                    {{ car.reason }}
+                                <div class="absolute top-2 right-2">
+                                    <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">Active</span>
                                 </div>
-                                {% endif %}
-                                
-                                <!-- Hover Restore Button -->
-                                <div class="absolute -right-16 top-1/2 transform -translate-y-1/2 transition-all duration-300 group-hover:right-2">
-                                    <form action="{{ url_for('restore_car', car_id=car.id) }}" method="post" class="inline">
-                                        <button type="submit" 
-                                                class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 rounded-l-lg shadow-lg transform hover:scale-105 transition-all duration-200"
-                                                title="Restore to Garage">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-                                            </svg>
-                                        </button>
-                                    </form>
-                                </div>
-                                <!-- Delete Button -->
-                                <div class="absolute -left-16 top-1/2 transform -translate-y-1/2 transition-all duration-300 group-hover:left-2">
-                                    <button
-                                        data-id="{{ car.id }}"
-                                        data-name="{{ car.make }} {{ car.model }}"
-                                        class="delete-btn bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-3 rounded-r-lg shadow-lg transform hover:scale-105 transition-all duration-200"
-                                    >
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                        </svg>
+                            </div>
+                            <div class="p-4">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-2">{{ car.year }} {{ car.make }} {{ car.model }}</h4>
+                                {% if car.miles %}<p class="text-gray-600 text-sm mb-1"><i class="fas fa-tachometer-alt mr-1"></i>{{ car.miles|round|int }} miles</p>{% endif %}
+                                {% if car.hours %}<p class="text-gray-600 text-sm mb-1"><i class="fas fa-clock mr-1"></i>{{ car.hours|round|int }} hours</p>{% endif %}
+                                {% if car.vin %}<p class="text-gray-600 text-sm mb-3"><i class="fas fa-barcode mr-1"></i>{{ car.vin }}</p>{% endif %}
+                                <div class="flex gap-2 justify-end">
+                                    <a href="{{ url_for('car_detail', car_id=car.id) }}" class="bg-gray-700 text-white px-3 py-1 rounded text-sm hover:bg-gray-800 transition-colors">View Details</a>
+                                    <button onclick="openQuickEditModal(this)"
+                                        data-car-id="{{ car.id }}"
+                                        data-car-vin="{{ car.vin or '' }}"
+                                        data-car-miles="{{ car.miles or 0 }}"
+                                        data-car-hours="{{ car.hours or 0 }}"
+                                        class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors">
+                                        Quick Edit
                                     </button>
                                 </div>
                             </div>
-                            
-                            <!-- Car Details -->
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if type_past %}
+                    <p class="text-sm text-gray-500 mb-3">Past</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {% for car in type_past %}
+                        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden opacity-75">
+                            <div class="relative">
+                                {% if car.image_path %}
+                                <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" 
+                                    alt="{{ car.year }} {{ car.make }} {{ car.model }}" 
+                                    class="w-full h-48 object-cover">
+                                {% else %}
+                                <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                                    <i class="fas {{ icon_map.get(car.vehicle_type, 'fa-question-circle') }} text-gray-400 text-4xl"></i>
+                                </div>
+                                {% endif %}
+                                <div class="absolute top-2 right-2">
+                                    <span class="bg-gray-500 text-white text-xs px-2 py-1 rounded-full">Past</span>
+                                </div>
+                            </div>
                             <div class="p-4">
-                                <h3 class="text-xl font-semibold text-gray-600">{{ car.year }} {{ car.make }} {{ car.model }}</h3>
-                                <div class="mt-4">
-                                    <a href="{{ url_for('car_detail', car_id=car.id) }}" class="text-blue-600 hover:text-blue-800">View Details</a>
+                                <h4 class="text-lg font-semibold text-gray-800 mb-2">{{ car.year }} {{ car.make }} {{ car.model }}</h4>
+                                {% if car.miles %}<p class="text-gray-600 text-sm mb-1"><i class="fas fa-tachometer-alt mr-1"></i>{{ car.miles|round|int }} miles</p>{% endif %}
+                                {% if car.sell_date %}<p class="text-gray-600 text-sm mb-3"><i class="fas fa-calendar-times mr-1"></i>Sold: {{ car.sell_date }}</p>{% endif %}
+                                <div class="flex gap-2 justify-end">
+                                    <a href="{{ url_for('car_detail', car_id=car.id) }}" class="bg-gray-700 text-white px-3 py-1 rounded text-sm hover:bg-gray-800 transition-colors">View Details</a>
                                 </div>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
+                    {% endif %}
                 </div>
                 {% endif %}
-            </div>
-            {% endif %}
             {% endfor %}
         </div>
+
+        <!-- ======================== PER-TYPE TABS ======================== -->
+        {% for vehicle_type in vehicle_types %}
+        {% set active_count = active_cars_grouped.get(vehicle_type, [])|length %}
+        {% set past_count = past_cars_grouped.get(vehicle_type, [])|length %}
+        {% if active_count > 0 or past_count > 0 %}
+        <div id="section-{{ vehicle_type.lower() }}" class="vehicle-section hidden">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-700">{{ vehicle_type }}s</h2>
+
+            {% if active_count > 0 %}
+            <div class="mb-8">
+                <h3 class="text-lg font-medium mb-4 text-gray-600">Current {{ vehicle_type }}s</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for car in active_cars_grouped.get(vehicle_type, []) %}
+                    <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+                        <div class="relative">
+                            {% if car.image_path %}
+                            <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" 
+                                alt="{{ car.year }} {{ car.make }} {{ car.model }}" 
+                                class="w-full h-48 object-cover">
+                            {% else %}
+                            <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                                <i class="fas {{ icon_map.get(vehicle_type, 'fa-question-circle') }} text-gray-400 text-4xl"></i>
+                            </div>
+                            {% endif %}
+                            <div class="absolute top-2 right-2">
+                                <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">Active</span>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h4 class="text-lg font-semibold text-gray-800 mb-2">{{ car.year }} {{ car.make }} {{ car.model }}</h4>
+                            {% if car.miles %}<p class="text-gray-600 text-sm mb-1"><i class="fas fa-tachometer-alt mr-1"></i>{{ car.miles|round|int }} miles</p>{% endif %}
+                            {% if car.hours %}<p class="text-gray-600 text-sm mb-1"><i class="fas fa-clock mr-1"></i>{{ car.hours|round|int }} hours</p>{% endif %}
+                            {% if car.vin %}<p class="text-gray-600 text-sm mb-3"><i class="fas fa-barcode mr-1"></i>{{ car.vin }}</p>{% endif %}
+                            <div class="flex gap-2 justify-end">
+                                <a href="{{ url_for('car_detail', car_id=car.id) }}" class="bg-gray-700 text-white px-3 py-1 rounded text-sm hover:bg-gray-800 transition-colors">View Details</a>
+                                <button onclick="openQuickEditModal(this)"
+                                    data-car-id="{{ car.id }}"
+                                    data-car-vin="{{ car.vin or '' }}"
+                                    data-car-miles="{{ car.miles or 0 }}"
+                                    data-car-hours="{{ car.hours or 0 }}"
+                                    class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors">
+                                    Quick Edit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if past_count > 0 %}
+            <div>
+                <h3 class="text-lg font-medium mb-4 text-gray-600">Past {{ vehicle_type }}s</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for car in past_cars_grouped.get(vehicle_type, []) %}
+                    <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden opacity-75">
+                        <div class="relative">
+                            {% if car.image_path %}
+                            <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" 
+                                alt="{{ car.year }} {{ car.make }} {{ car.model }}" 
+                                class="w-full h-48 object-cover">
+                            {% else %}
+                            <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                                <i class="fas {{ icon_map.get(vehicle_type, 'fa-question-circle') }} text-gray-400 text-4xl"></i>
+                            </div>
+                            {% endif %}
+                            <div class="absolute top-2 right-2">
+                                <span class="bg-gray-500 text-white text-xs px-2 py-1 rounded-full">Past</span>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <h4 class="text-lg font-semibold text-gray-800 mb-2">{{ car.year }} {{ car.make }} {{ car.model }}</h4>
+                            {% if car.miles %}<p class="text-gray-600 text-sm mb-1"><i class="fas fa-tachometer-alt mr-1"></i>{{ car.miles|round|int }} miles</p>{% endif %}
+                            {% if car.sell_date %}<p class="text-gray-600 text-sm mb-3"><i class="fas fa-calendar-times mr-1"></i>Sold: {{ car.sell_date }}</p>{% endif %}
+                            <div class="flex gap-2 justify-end">
+                                <a href="{{ url_for('car_detail', car_id=car.id) }}" class="bg-gray-700 text-white px-3 py-1 rounded text-sm hover:bg-gray-800 transition-colors">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+
+    </div>
     {% endif %}
 
     <!-- Floating Add Vehicle Button -->
@@ -251,21 +331,17 @@
 
     <!-- Add Car Modal -->
     <div id="addCarModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-content" style="max-width: 600px;">
             <button onclick="closeAddCarModal()" class="modal-close">&times;</button>
-            
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-900">Add New Vehicle</h2>
             </div>
-            
             <form id="addCarForm" action="{{ url_for('add_car') }}" method="POST" enctype="multipart/form-data">
                 <div class="space-y-4">
                     <div>
-                        <label for="vehicle-type" class="block text-sm font-medium text-gray-700">Vehicle Type</label>
+                        <label class="block text-sm font-medium text-gray-700">Vehicle Type</label>
                         <select id="vehicle-type" name="vehicle_type" required 
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                        placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                        focus:border-blue-500 sm:text-sm">
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                             <option value="">Select Type</option>
                             <option value="Car">Car</option>
                             <option value="Truck">Truck</option>
@@ -274,125 +350,103 @@
                             <option value="RV">RV</option>
                         </select>
                     </div>
-                    
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label for="make" class="block text-sm font-medium text-gray-700">Make</label>
-                            <input id="make" name="make" type="text" required 
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., Toyota">
+                            <label class="block text-sm font-medium text-gray-700">Make</label>
+                            <input name="make" type="text" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., Toyota">
                         </div>
                         <div>
-                            <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
-                            <input id="model" name="model" type="text" required 
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., Camry">
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="year" class="block text-sm font-medium text-gray-700">Year</label>
-                            <input id="year" name="year" type="number" required 
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., 2023">
+                            <label class="block text-sm font-medium text-gray-700">Model</label>
+                            <input name="model" type="text" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., Camry">
                         </div>
                         <div>
-                            <label for="vin" class="block text-sm font-medium text-gray-700">VIN Number (optional)</label>
-                            <input id="vin" name="vin" type="text" 
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., 1HGCM82633A123456">
+                            <label class="block text-sm font-medium text-gray-700">Year</label>
+                            <input name="year" type="number" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 2023">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">VIN (optional)</label>
+                            <input name="vin" type="text" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 1HGCM82633A123456">
                         </div>
                         <div id="purchase_mileage_field">
-                            <label for="purchase_mileage" class="block text-sm font-medium text-gray-700">Miles When Purchased (optional)</label>
-                            <input id="purchase_mileage" name="purchase_mileage" type="number" step="0.1"
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., 25000">
+                            <label class="block text-sm font-medium text-gray-700">Miles When Purchased (optional)</label>
+                            <input id="purchase_mileage" name="purchase_mileage" type="number" step="0.1" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 25000">
                         </div>
                         <div id="purchase_hours_field" style="display: none;">
-                            <label for="purchase_hours" class="block text-sm font-medium text-gray-700">Hours When Purchased (optional)</label>
-                            <input id="purchase_hours" name="purchase_hours" type="number" step="0.1"
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., 150.5">
+                            <label class="block text-sm font-medium text-gray-700">Hours When Purchased (optional)</label>
+                            <input id="purchase_hours" name="purchase_hours" type="number" step="0.1" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 150.5">
                         </div>
                         <div id="miles-field" style="display: none;">
-                            <label for="miles" class="block text-sm font-medium text-gray-700">Current Miles (optional)</label>
-                            <input id="miles" name="miles" type="number" step="0.1"
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., 35000">
+                            <label class="block text-sm font-medium text-gray-700">Current Miles (optional)</label>
+                            <input id="miles" name="miles" type="number" step="0.1" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 35000">
                         </div>
                         <div id="hours-field" style="display: none;">
-                            <label for="hours" class="block text-sm font-medium text-gray-700">Current Hours (Boat Only)</label>
-                            <input id="hours" name="hours" type="number" step="0.1"
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., 250.5">
+                            <label class="block text-sm font-medium text-gray-700">Current Hours (Boat Only)</label>
+                            <input id="hours" name="hours" type="number" step="0.1" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 250.5">
                         </div>
                         <div>
-                            <label for="purchase_date" class="block text-sm font-medium text-gray-700">Purchase Date (optional)</label>
-                            <input id="purchase_date" name="purchase_date" type="date"
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm">
+                            <label class="block text-sm font-medium text-gray-700">Purchase Date (optional)</label>
+                            <input name="purchase_date" type="date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                         </div>
                         <div>
-                            <label for="image" class="block text-sm font-medium text-gray-700">Vehicle Image (optional)</label>
-                            <div class="drag-drop-area" id="cars-modal-drop-zone" 
-                                ondrop="handleDrop(event, 'cars_modal_image')" 
-                                ondragover="handleDragOver(event)" 
+                            <label class="block text-sm font-medium text-gray-700">Vehicle Image (optional)</label>
+                            <div class="drag-drop-area" id="cars-modal-drop-zone"
+                                ondrop="handleDrop(event, 'cars_modal_image')"
+                                ondragover="handleDragOver(event)"
                                 ondragleave="handleDragLeave(event)">
-                                <div class="drag-drop-content">
-                                    <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                                    </svg>
-                                    <p class="text-sm text-gray-600">Drag & drop vehicle image here or</p>
-                                    <input id="cars_modal_image" name="image" type="file" accept="image/*"
-                                        class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                        text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                        focus:border-blue-500 sm:text-sm">
-                                </div>
+                                <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                </svg>
+                                <p class="text-sm text-gray-600">Drag & drop image here or</p>
+                                <input id="cars_modal_image" name="image" type="file" accept="image/*" class="mt-2 block w-full text-sm">
                             </div>
                         </div>
                     </div>
-                    
-                <div class="mt-6">
-                    <button type="submit" 
-                        class="group relative w-full flex justify-center py-3 px-4 border border-transparent 
-                            text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 
-                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                            shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-                        <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                            <svg class="h-5 w-5 text-blue-500 group-hover:text-blue-400" xmlns="http://www.w3.org/2000/svg" 
-                                viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 006 0zm-7 9a7 7 0 1114 0H3a2 2 0 00-2 2v6a2 2 0 002 2H5a2 2 0 002-2v-6a2 2 0 00-2-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" clip-rule="evenodd" />
-                            </svg>
-                        </span>
-                        Add Vehicle
-                    </button>
+                    <div class="mt-6">
+                        <button type="submit" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                            Add Vehicle
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
+
+    <!-- Quick Edit Modal -->
+    <div id="quickEditModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 500px;">
+            <button onclick="closeQuickEditModal()" class="modal-close">&times;</button>
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Quick Edit Vehicle</h2>
+                <p class="text-gray-600 mt-2">Update basic vehicle information</p>
+            </div>
+            <form id="quickEditForm" method="POST">
+                <input type="hidden" id="quickEditCarId" name="car_id">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">VIN Number</label>
+                        <input id="quick_vin" name="vin" type="text" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 1HGCM82633A123456">
+                    </div>
+                    <div id="quick_miles_field">
+                        <label class="block text-sm font-medium text-gray-700">Current Miles</label>
+                        <input id="quick_miles" name="miles" type="number" step="0.1" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 35000">
+                    </div>
+                    <div id="quick_hours_field" style="display: none;">
+                        <label class="block text-sm font-medium text-gray-700">Current Hours (Boat Only)</label>
+                        <input id="quick_hours" name="hours" type="number" step="0.1" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 250.5">
+                    </div>
+                </div>
+                <div class="mt-6 flex gap-3">
+                    <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Save Changes</button>
+                    <button type="button" onclick="closeQuickEditModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-2 px-4 rounded-lg transition-colors">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 500px;">
             <button onclick="closeDeleteModal()" class="modal-close">&times;</button>
-            
             <div class="text-center mb-6">
                 <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
                     <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -400,167 +454,54 @@
                     </svg>
                 </div>
                 <h2 class="text-2xl font-bold text-gray-900">Delete Vehicle</h2>
-                <p class="text-gray-600 mt-2">This action cannot be undone. The vehicle will be permanently deleted.</p>
+                <p class="text-gray-600 mt-2">This action cannot be undone.</p>
             </div>
-            
             <form id="deleteForm" method="POST">
                 <input type="hidden" id="deleteCarId" name="car_id">
-                
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Type <span id="deleteCarName" class="font-bold text-red-600"></span> to confirm deletion:
+                        Type <span id="deleteCarName" class="font-bold text-red-600"></span> to confirm:
                     </label>
                     <input type="text" id="deleteConfirmation" name="confirmation" required
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
                         placeholder="Type make and model to confirm">
                 </div>
-                
                 <div class="flex gap-3">
-                    <button type="submit" 
-                        class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-                        Delete Forever
-                    </button>
-                    <button type="button" onclick="closeDeleteModal()" 
-                        class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-2 px-4 rounded-lg transition-colors">
-                        Cancel
-                    </button>
+                    <button type="submit" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Delete Forever</button>
+                    <button type="button" onclick="closeDeleteModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-2 px-4 rounded-lg transition-colors">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
-</div>
 
+</div><!-- end container -->
 
 <script>
-
+    // ── Modal helpers ──────────────────────────────────────────────
     function openAddCarModal() {
-        console.log('Opening add car modal');
         document.getElementById('addCarModal').classList.add('active');
         document.body.style.overflow = 'hidden';
-        // Initialize field visibility
         toggleHoursField();
     }
-
     function closeAddCarModal() {
-        console.log('Closing add car modal');
         document.getElementById('addCarModal').classList.remove('active');
         document.body.style.overflow = 'auto';
     }
-
-    function toggleHoursField() {        
-        const vehicleSelect = document.getElementById('vehicle-type') || document.querySelector('select[name="vehicle_type"]');
-        if (!vehicleSelect) {
-            return;
-        }
-        
-        const vehicleType = vehicleSelect.value;
-        const hoursField = document.getElementById('hours-field');
-        const milesField = document.getElementById('miles-field');
-        const purchaseHoursField = document.getElementById('purchase_hours_field');
-        const purchaseMileageField = document.getElementById('purchase_mileage_field');
-                
-        if (vehicleType === 'Boat') {
-            // Show hours fields, hide miles fields
-            hoursField.style.display = 'block';
-            purchaseHoursField.style.display = 'block';
-            milesField.style.display = 'none';
-            purchaseMileageField.style.display = 'none';
-        } else {
-            // Show miles fields, hide hours fields
-            hoursField.style.display = 'none';
-            purchaseHoursField.style.display = 'none';
-            milesField.style.display = 'block';
-            purchaseMileageField.style.display = 'block';
-        }
+    function openQuickEditModal(button) {
+        document.getElementById('quickEditCarId').value = button.dataset.carId;
+        document.getElementById('quick_vin').value = button.dataset.carVin;
+        document.getElementById('quick_miles').value = button.dataset.carMiles;
+        document.getElementById('quick_hours').value = button.dataset.carHours;
+        const hasHours = parseFloat(button.dataset.carHours) > 0;
+        document.getElementById('quick_miles_field').style.display = hasHours ? 'none' : 'block';
+        document.getElementById('quick_hours_field').style.display = hasHours ? 'block' : 'none';
+        document.getElementById('quickEditModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
     }
-    
-    // Handle form submission - use fetch for better control
-    document.getElementById('addCarForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        
-        fetch(this.action, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (response.ok) {
-                // Close modal and reload page to show new vehicle
-                closeAddCarModal();
-                window.location.reload();
-            } else {
-                // Show error and fallback to normal submission
-                console.error('Server responded with error:', response.status);
-                alert('Error adding vehicle. Submitting normally...');
-                this.submit();
-            }
-        })
-        .catch(error => {
-            console.error('Fetch error:', error);
-            // Fallback to normal form submission
-            alert('Network error. Submitting normally...');
-            this.submit();
-        });
-    });
-        
-    // Close modal when clicking outside
-    document.getElementById('addCarModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeAddCarModal();
-        }
-    });
-
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeAddCarModal();
-        }
-    });
-
-    // Add event listener for vehicle type change
-    document.addEventListener('DOMContentLoaded', function() {
-        const vehicleSelect = document.getElementById('vehicle-type');
-        if (vehicleSelect) {
-            vehicleSelect.addEventListener('change', toggleHoursField);
-            toggleHoursField(); // Initialize on page load
-        }
-    });
-
-    function showVehicleType(vehicleType) {
-        // Hide all vehicle sections
-        const allSections = document.querySelectorAll('.vehicle-section');
-        allSections.forEach(section => {
-            section.classList.add('hidden');
-        });
-        
-        // Show selected vehicle section
-        const selectedSection = document.getElementById(`section-${vehicleType.toLowerCase()}`);
-        if (selectedSection) {
-            selectedSection.classList.remove('hidden');
-        }
-        
-        // Update tab styles
-        const allTabs = document.querySelectorAll('[id^="tab-"]');
-        allTabs.forEach(tab => {
-            tab.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
-            tab.classList.add('bg-gray-100', 'text-gray-700', 'border-transparent');
-        });
-        
-        const selectedTab = document.getElementById(`tab-${vehicleType.toLowerCase()}`);
-        if (selectedTab) {
-            selectedTab.classList.remove('bg-gray-100', 'text-gray-700', 'border-transparent');
-            selectedTab.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
-            
-            // Update badge color
-            const badge = selectedTab.querySelector('span');
-            if (badge) {
-                badge.classList.remove('bg-gray-600');
-                badge.classList.add('bg-blue-800');
-            }
-        }
+    function closeQuickEditModal() {
+        document.getElementById('quickEditModal').classList.remove('active');
+        document.body.style.overflow = 'auto';
     }
-
     function openDeleteModal(carId, carName) {
         document.getElementById('deleteCarId').value = carId;
         document.getElementById('deleteCarName').textContent = carName;
@@ -568,70 +509,126 @@
         document.getElementById('deleteModal').classList.add('active');
         document.body.style.overflow = 'hidden';
     }
-
     function closeDeleteModal() {
         document.getElementById('deleteModal').classList.remove('active');
         document.body.style.overflow = 'auto';
     }
 
-    // Handle delete form submission
+    // ── Hours/Miles toggle ─────────────────────────────────────────
+    function toggleHoursField() {
+        const vehicleSelect = document.getElementById('vehicle-type');
+        if (!vehicleSelect) return;
+        const isBoat = vehicleSelect.value === 'Boat';
+        document.getElementById('hours-field').style.display = isBoat ? 'block' : 'none';
+        document.getElementById('purchase_hours_field').style.display = isBoat ? 'block' : 'none';
+        document.getElementById('miles-field').style.display = isBoat ? 'none' : 'block';
+        document.getElementById('purchase_mileage_field').style.display = isBoat ? 'none' : 'block';
+    }
+
+    // ── Tab switching ──────────────────────────────────────────────
+    function showVehicleType(vehicleType) {
+        document.querySelectorAll('.vehicle-section').forEach(s => s.classList.add('hidden'));
+        const section = document.getElementById(`section-${vehicleType.toLowerCase()}`);
+        if (section) section.classList.remove('hidden');
+
+        document.querySelectorAll('[id^="tab-"]').forEach(tab => {
+            tab.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+            tab.classList.add('bg-gray-100', 'text-gray-700', 'border-transparent');
+            const badge = tab.querySelector('span');
+            if (badge) { badge.classList.remove('bg-blue-800'); badge.classList.add('bg-gray-600'); }
+        });
+        const activeTab = document.getElementById(`tab-${vehicleType.toLowerCase()}`);
+        if (activeTab) {
+            activeTab.classList.remove('bg-gray-100', 'text-gray-700', 'border-transparent');
+            activeTab.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+            const badge = activeTab.querySelector('span');
+            if (badge) { badge.classList.remove('bg-gray-600'); badge.classList.add('bg-blue-800'); }
+        }
+    }
+
+    // ── Form submissions ───────────────────────────────────────────
+    document.getElementById('addCarForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetch(this.action, { method: 'POST', body: new FormData(this) })
+            .then(r => { if (r.ok) { closeAddCarModal(); window.location.reload(); } else { this.submit(); } })
+            .catch(() => this.submit());
+    });
+
+    document.getElementById('quickEditForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        fetch(`/car/${formData.get('car_id')}/quick_edit`, { method: 'POST', body: formData })
+            .then(r => { if (r.ok) { closeQuickEditModal(); window.location.reload(); } else { alert('Error updating vehicle.'); } })
+            .catch(() => alert('Error updating vehicle.'));
+    });
+
     document.getElementById('deleteForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        
         const carId = document.getElementById('deleteCarId').value;
         const confirmation = document.getElementById('deleteConfirmation').value;
         const carName = document.getElementById('deleteCarName').textContent;
-        
         if (confirmation.toLowerCase() !== carName.toLowerCase()) {
-            alert('Make and model do not match. Please type the exact make and model to confirm deletion.');
+            alert('Make and model do not match.');
             return;
         }
-        
-        // Submit the delete request
         fetch(`/car/${carId}/delete`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `car_id=${carId}&confirmation=${encodeURIComponent(confirmation)}`
         })
-        .then(response => {
-            if (response.ok) {
-                closeDeleteModal();
-                window.location.reload();
-            } else {
-                alert('Error deleting vehicle. Please try again.');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error deleting vehicle. Please try again.');
+        .then(r => { if (r.ok) { closeDeleteModal(); window.location.reload(); } else { alert('Error deleting vehicle.'); } })
+        .catch(() => alert('Error deleting vehicle.'));
+    });
+
+    // ── Click outside / Escape to close ───────────────────────────
+    ['addCarModal', 'quickEditModal', 'deleteModal'].forEach(id => {
+        document.getElementById(id).addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('active');
         });
     });
-
-    // Close modal when clicking outside
-    document.getElementById('deleteModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeDeleteModal();
-        }
-    });
-
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
-            closeDeleteModal();
+            ['addCarModal', 'quickEditModal', 'deleteModal'].forEach(id => {
+                document.getElementById(id).classList.remove('active');
+            });
+            document.body.style.overflow = 'auto';
         }
     });
 
-    document.addEventListener('click', function (e) {
+    // ── Delete button delegation ───────────────────────────────────
+    document.addEventListener('click', function(e) {
         const btn = e.target.closest('.delete-btn');
-        if (!btn) return;
-
-        const carId = btn.dataset.id;
-        const carName = btn.dataset.name;
-
-        openDeleteModal(carId, carName);
+        if (btn) openDeleteModal(btn.dataset.id, btn.dataset.name);
     });
 
+    // ── Drag and drop ──────────────────────────────────────────────
+    function handleDragOver(event) {
+        event.preventDefault();
+        event.currentTarget.classList.add('drag-over');
+    }
+    function handleDragLeave(event) {
+        event.currentTarget.classList.remove('drag-over');
+    }
+    function handleDrop(event, inputId) {
+        event.preventDefault();
+        event.currentTarget.classList.remove('drag-over');
+        const file = event.dataTransfer.files[0];
+        if (file) {
+            const input = document.getElementById(inputId);
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            const label = event.currentTarget.querySelector('p');
+            if (label) label.textContent = `Selected: ${file.name}`;
+        }
+    }
+
+    // ── Init ───────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function() {
+        const vehicleSelect = document.getElementById('vehicle-type');
+        if (vehicleSelect) vehicleSelect.addEventListener('change', toggleHoursField);
+        toggleHoursField();
+    });
 </script>
+
 {% endblock %}

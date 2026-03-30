@@ -529,6 +529,8 @@ def cars():
     
     conn.close()
     return render_template("cars.html", 
+        active_cars=active_cars,
+        past_cars=past_cars,
         active_cars_grouped=active_cars_grouped, 
         past_cars_grouped=past_cars_grouped)
 
@@ -774,6 +776,61 @@ def edit_car(car_id):
     
     conn.close()
     return redirect(url_for('car_detail', car_id=car_id))
+
+@app.route("/car/<int:car_id>/quick_edit", methods=["POST"])
+@login_required
+def quick_edit_car(car_id):
+    conn = get_db_connection()
+    
+    try:
+        vin = request.form.get('vin', '').strip()
+        miles = float(request.form.get('miles', 0)) if request.form.get('miles') else None
+        hours = float(request.form.get('hours', 0)) if request.form.get('hours') else None
+        
+        # Validate input
+        if miles is not None and miles < 0:
+            flash('Miles cannot be negative', 'error')
+            return redirect(url_for('cars'))
+        if hours is not None and hours < 0:
+            flash('Hours cannot be negative', 'error')
+            return redirect(url_for('cars'))
+        
+        # Update the car with the new values
+        update_fields = []
+        update_params = []
+        
+        if vin:
+            update_fields.append("vin = ?")
+            update_params.append(vin)
+        
+        if miles is not None:
+            update_fields.append("miles = ?")
+            update_params.append(miles)
+        
+        if hours is not None:
+            update_fields.append("hours = ?")
+            update_params.append(hours)
+        
+        if update_fields:
+            update_query = f"UPDATE cars SET {', '.join(update_fields)} WHERE id = ? AND user_id = ?"
+            update_params.extend([car_id, session['user_id']])
+            
+            conn.execute(update_query, update_params)
+            conn.commit()
+            flash('Vehicle updated successfully!', 'success')
+        else:
+            flash('No changes to update', 'info')
+            
+    except sqlite3.Error as e:
+        conn.rollback()
+        flash(f'Database error: {str(e)}', 'error')
+    except Exception as e:
+        conn.rollback()
+        flash(f'Error updating vehicle: {str(e)}', 'error')
+    finally:
+        conn.close()
+    
+    return redirect(url_for('cars'))
 
 @app.route("/car/<int:car_id>/add_maintenance", methods=["POST"])
 def add_maintenance(car_id):

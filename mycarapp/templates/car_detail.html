@@ -146,9 +146,23 @@
                         placeholder="e.g., 25000">
                 </div>
                 <div>
-                    <label class="block font-medium mb-1">Update Image (optional)</label>
-                    <input type="file" name="image" accept="image/*" class="border p-2 w-full rounded">
-                    <p class="text-sm text-gray-600 mt-1">Leave empty to keep current image</p>
+                    <label for="image" class="block text-sm font-medium text-gray-700">Update Image (optional)</label>
+                    <div class="drag-drop-area" id="cars-modal-drop-zone" 
+                        ondrop="handleDrop(event, 'cars_modal_image')" 
+                        ondragover="handleDragOver(event)" 
+                        ondragleave="handleDragLeave(event)">
+                        <div class="drag-drop-content">
+                            <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                            </svg>
+                            <p class="text-sm text-gray-600">Drag & drop vehicle image here or</p>
+                            <input id="cars_modal_image" name="image" type="file" accept="image/*"
+                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
+                                text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
+                                focus:border-blue-500 sm:text-sm">
+                            <p class="text-sm text-gray-600 mt-1">Leave empty to keep current image</p>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
@@ -468,7 +482,7 @@
 
 <!-- Add Part Modal -->
 <div id="addPartModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
         <div class="p-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold text-gray-800">Add Aftermarket Part</h2>
@@ -479,7 +493,7 @@
                 </button>
             </div>
             
-            <form action="{{ url_for('add_part', car_id=car['id']) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+            <form action="{{ url_for('add_part', car_id=car['id']) }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block font-medium mb-1">Part Name *</label>
                     <input type="text" name="part_name" class="border p-2 w-full rounded" placeholder="e.g., Cold Air Intake" required>
@@ -496,11 +510,11 @@
                     <label class="block font-medium mb-1">Cost</label>
                     <input type="number" step="0.01" name="cost" class="border p-2 w-full rounded" placeholder="e.g., 299.99">
                 </div>
-                <div>
+                <div class="col-span-2">
                     <label class="block font-medium mb-1">Notes</label>
                     <textarea name="notes" class="border p-2 w-full rounded" rows="3" placeholder="Installation notes, performance gains, etc."></textarea>
                 </div>
-                <div>
+                <div class="col-span-2">
                     <label class="block font-medium mb-1">Receipt Image (optional)</label>
                     <div class="drag-drop-area" id="add-part-drop-zone" 
                         ondrop="handleDrop(event, 'add_part_receipt_image')" 
@@ -516,7 +530,7 @@
                     </div>
                     <p class="text-sm text-gray-500 mt-1">Upload a receipt image for this aftermarket part</p>
                 </div>
-                <div class="flex gap-3 pt-4">
+                <div class="col-span-2 flex gap-3 pt-4">
                     <button type="submit" class="flex-1 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">Add Part</button>
                     <button type="button" onclick="closeAddPartModal()" class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
                 </div>
@@ -641,30 +655,28 @@
                 </button>
             </div>
             
-            <form action="{{ url_for('add_scheduled', car_id=car['id']) }}" method="POST" class="space-y-4">
+            <form action="{{ url_for('add_scheduled', car_id=car['id']) }}" method="POST" class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block font-medium mb-1">Service Type *</label>
                     <input type="text" name="service_type" class="border p-2 w-full rounded" required>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block font-medium mb-1">Due Date</label>
-                        <input type="date" name="due_date" class="border p-2 w-full rounded">
-                    </div>
-                    <div>
-                        <label class="block font-medium mb-1">Due at Mileage</label>
-                        <input type="number" name="due_mileage" class="border p-2 w-full rounded">
-                    </div>
+                <div>
+                    <label class="block font-medium mb-1">Due Date</label>
+                    <input type="date" name="due_date" class="border p-2 w-full rounded">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Due at Mileage</label>
+                    <input type="number" name="due_mileage" class="border p-2 w-full rounded">
                 </div>
                 <div class="flex items-center">
                     <input type="checkbox" id="add_reminder_enabled" name="reminder_enabled" class="mr-2">
                     <label for="add_reminder_enabled" class="font-medium">Enable Reminder</label>
                 </div>
-                <div>
+                <div class="col-span-2">
                     <label class="block font-medium mb-1">Notes</label>
                     <textarea name="notes" class="border p-2 w-full rounded" rows="3" placeholder="Additional details..."></textarea>
                 </div>
-                <div class="flex gap-3 pt-4">
+                <div class="col-span-2 flex gap-3 pt-4">
                     <button type="submit" class="flex-1 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">Schedule Maintenance</button>
                     <button type="button" onclick="closeAddScheduledModal()" class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300">Cancel</button>
                 </div>
