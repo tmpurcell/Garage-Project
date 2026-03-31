@@ -30,7 +30,7 @@
 
         <!-- Parts -->
         <div class="bg-white rounded-lg shadow-lg p-6 border-l-4 border-purple-500">
-            <p class="text-sm text-gray-600">Parts & Upgrades</p>
+            <p class="text-sm text-gray-600">Aftermarket Parts & Upgrades</p>
             <p class="text-2xl font-bold text-gray-800">
                 {{ total_parts_cost | currency }}
             </p>
@@ -64,7 +64,7 @@
                     Maintenance Overview
                 </button>
                 <button onclick="showTab('parts')" class="tab-btn px-6 py-3 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700">
-                    Parts & Upgrades
+                    Aftermarket Parts & Upgrades
                 </button>
             </nav>
         </div>
@@ -109,7 +109,7 @@
                                         <span class="font-medium">${{ cars_with_data[car.id|string]['maintenance_cost'] | round(2) }}</span>
                                     </div>
                                     <div class="flex justify-between">
-                                        <span class="text-gray-600">Parts:</span>
+                                        <span class="text-gray-600">Aftermarket Parts:</span>
                                         <span class="font-medium">${{ cars_with_data[car.id|string]['parts_cost'] | round(2) }}</span>
                                     </div>
                                     <div class="flex justify-between border-t pt-2">
@@ -168,7 +168,7 @@
                                     <span class="font-medium">${{ cars_with_data[car.id|string]['maintenance_cost'] | round(2) }}</span>
                                 </div>
                                 <div class="flex justify-between">
-                                    <span class="text-gray-600">Parts:</span>
+                                    <span class="text-gray-600">Aftermarket Parts:</span>
                                     <span class="font-medium">${{ cars_with_data[car.id|string]['parts_cost'] | round(2) }}</span>
                                 </div>
                                 <div class="flex justify-between border-t pt-2">
@@ -240,11 +240,11 @@
             <!-- Parts Overview Tab -->
             <div id="parts" class="tab-content hidden">
                 <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Parts & Upgrades</h2>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Aftermarket Parts & Upgrades</h2>
                     <div class="bg-purple-50 border-l-4 border-purple-500 p-4 mb-6">
                         <p class="text-purple-800">
-                            <strong>Total Parts Investment:</strong> ${{ "{:,.2f}".format(total_parts_cost) }} 
-                            across {{ parts_count }} parts
+                            <strong>Total Aftermarket Parts Investment:</strong> ${{ "{:,.2f}".format(total_parts_cost) }} 
+                            across {{ parts_count }} Aftermarket Parts
                         </p>
                     </div>
                 </div>

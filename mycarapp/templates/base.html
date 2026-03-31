@@ -70,30 +70,33 @@
     <body class="bg-gray-300 text-gray-800 min-h-screen font-sans flex flex-col h-full">
         <header class="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-50">            
             <div class="max-w-8xl mx-auto flex items-center">
-                <!-- Left side - Empty spacer to balance the right side -->
-                <div class="w-8"></div>
+                <!-- Left side -->
+                <div class="w-48 flex-shrink-0">
+                    <p class="text-xl font-bold text-white">My Garage</p>
+                </div>
                 
                 <!-- Center - Logo and Navigation -->
                 <div class="flex-1 flex items-center justify-center gap-12">
                     {% if 'user_id' not in session %}
                         <a href="{{ url_for('landing') }}" class="text-2xl font-bold hover:text-gray-300 transition-colors">
-                            My Garage
+                            Start Your Garage
                         </a>
                     {% else %}
                         <a href="{{ url_for('home') }}" class="text-2xl font-bold hover:text-gray-300 transition-colors">
-                            My Garage
+                            My Home
                         </a>
                         <a href="{{ url_for('cars') }}" class="text-2xl font-bold hover:text-gray-300 transition-colors">
                             My Cars
                         </a>
+                        <a href="{{ url_for('adv_garage') }}" class="text-2xl font-bold hover:text-gray-300 transition-colors">
+                            My Dashboard
+                        </a>
                     {% endif %}
                 </div>
-                <!-- Right side - Welcome message and hamburger -->
-                <div class="flex items-center">
+                <!-- RIGHT side - match the left width -->
+                <div class="w-48 flex-shrink-0 flex items-center justify-end">
                     {% if 'user_id' in session %}
-                        {% if session['username'] %}
-                            <span class="text-gray-300 mr-4">Welcome, {{ session.get('first_name', 'User') }}</span>
-                        {% endif %}
+                        <span class="text-gray-300 mr-4 text-sm">Welcome, {{ session.get('first_name', 'User') }}</span>
                     {% endif %}
                     
                     <!-- Mobile menu button -->
@@ -101,19 +104,6 @@
                         <i class="fas fa-bars text-white"></i>
                     </button>
                 </div>
-                    
-                <!-- Regular menu items (hidden on mobile)
-                <div class="hidden md:flex items-center space-x-6 ml-6">
-                    {% if 'user_id' in session %}
-                        {% if session['username'] %}
-                            <span class="text-gray-300 mr-4">Welcome, {{ session.get('first_name', 'User') }}</span>
-                        {% endif %}
-                        <a href="{{ url_for('profile') }}" class="text-sm text-white hover:text-gray-300 transition-colors">My Account</a>
-                        <a href="{{ url_for('logout') }}" class="text-sm text-white hover:text-gray-300 transition-colors">Logout</a>
-                    {% else %}
-                        <a href="{{ url_for('login') }}" class="text-sm text-white hover:text-gray-300 transition-colors">Login</a>
-                        <button onclick="openRegisterModal()" class="text-sm text-white hover:text-gray-300 transition-colors bg-transparent border-none cursor-pointer">Register</button>                    {% endif %}
-                </div> -->
             </div>
         </header>
         

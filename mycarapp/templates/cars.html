@@ -200,7 +200,7 @@
                     <p class="text-sm text-gray-500 mb-3">Past</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {% for car in type_past %}
-                        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden opacity-75">
+                        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
                             <div class="relative">
                                 {% if car.image_path %}
                                 <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" 
@@ -211,8 +211,14 @@
                                     <i class="fas {{ icon_map.get(car.vehicle_type, 'fa-question-circle') }} text-gray-400 text-4xl"></i>
                                 </div>
                                 {% endif %}
-                                <div class="absolute top-2 right-2">
-                                    <span class="bg-gray-500 text-white text-xs px-2 py-1 rounded-full">No Longer in Garage</span>
+                                <div class="absolute top-0 left-0 right-0 bg-red-600 text-white text-center py-2">
+                                    <span class="text-sm font-semibold">
+                                        {% if car.reason %}
+                                            {{ car.reason }}
+                                        {% else %}
+                                            No Longer in Garage
+                                        {% endif %}
+                                    </span>
                                 </div>
                             </div>
                             <div class="p-4">

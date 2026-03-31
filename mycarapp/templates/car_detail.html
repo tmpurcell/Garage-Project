@@ -721,7 +721,7 @@
             <form action="{{ url_for('update_car_status', car_id=car['id']) }}" method="POST" class="space-y-4">
                 <div>
                     <label class="block font-medium mb-1">Reason *</label>
-                    <select name="reason" id="reasonSelect" class="border p-2 w-full rounded" required onchange="updateMileageLabel()">
+                    <select name="reason" id="reasonSelect" class="border p-2 w-full rounded" required onchange="updateMileageLabel(); updateCustomReasonField()">
                         <option value="">Select a reason</option>
                         <option value="Sold">Sold</option>
                         <option value="Crashed/Totaled">Crashed/Totaled</option>
@@ -730,8 +730,13 @@
                         <option value="Too Expensive to Repair">Too Expensive to Repair</option>
                         <option value="Traded In">Traded In</option>
                         <option value="Stolen">Stolen</option>
-                        <option value="Other">Other</option>
+                        <option value="Other">Other (please specify)</option>
                     </select>
+                </div>
+                <div id="customReasonField" class="hidden">
+                    <label class="block font-medium mb-1">Custom Reason *</label>
+                    <input type="text" name="custom_reason" id="customReasonInput" class="border p-2 w-full rounded" placeholder="e.g., Gifted to family member, Scrapped for parts, etc.">
+                    <p class="text-sm text-gray-500 mt-1">Please specify why this vehicle is leaving your garage</p>
                 </div>
                 <div id="mileageField">
                     <label class="block font-medium mb-1">Miles at <span id="mileageContext">Event</span> (optional)</label>
@@ -991,7 +996,7 @@
         const mileageContext = document.getElementById('mileageContext');
         const dateContext = document.getElementById('dateContext');
         const mileageField = document.getElementById('mileageField');
-        if (!reasonSelect || !mileageContext || !dateContext) return;
+        
         const contextMap = {
             'Sold': 'Time of Sale',
             'Crashed/Totaled': 'Time of Crash',
@@ -1006,6 +1011,21 @@
         mileageContext.textContent = context;
         dateContext.textContent = context;
         mileageField.style.display = reasonSelect.value === 'Stolen' ? 'none' : 'block';
+    }
+
+    function updateCustomReasonField() {
+        const reasonSelect = document.getElementById('reasonSelect');
+        const customReasonField = document.getElementById('customReasonField');
+        const customReasonInput = document.getElementById('customReasonInput');
+        
+        if (reasonSelect.value === 'Other') {
+            customReasonField.classList.remove('hidden');
+            customReasonInput.required = true;
+        } else {
+            customReasonField.classList.add('hidden');
+            customReasonInput.required = false;
+            customReasonInput.value = '';
+        }
     }
 
     document.getElementById('statusModal')?.addEventListener('click', function(e) {

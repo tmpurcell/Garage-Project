@@ -2,7 +2,6 @@
 
 {% block content %}
 <style>
-    /* Modal styles */
     .modal-overlay {
         display: none;
         position: fixed;
@@ -15,24 +14,21 @@
         justify-content: center;
         align-items: center;
     }
-
     .modal-overlay.active {
         display: flex;
     }
-
     .modal-content {
         background: white;
         padding: 2rem;
         border-radius: 0.5rem;
-        max-width: 90%;
         max-width: 650px;
+        width: 90%;
         max-height: 90vh;
         overflow-y: auto;
         position: relative;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
         margin: 20px;
     }
-
     .modal-close {
         position: absolute;
         top: 1rem;
@@ -45,126 +41,162 @@
         padding: 0.25rem;
         line-height: 1;
     }
+    .modal-close:hover { color: #374151; }
 
-    .modal-close:hover {
-        color: #374151;
-    }
-
-    /* Stats popup styles */
-    .stats-popup {
-        pointer-events: none;
-    }
-    
-    .stats-card:hover .stats-popup,
-    .group:hover .stats-popup {
-        pointer-events: auto;
-    }
-    
-    /* Ensure popups don't get clipped */
-    .group {
-        overflow: visible;
-    }
-    
-    /* Popup arrow */
-    .stats-popup::after {
-        content: '';
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        border: 6px solid transparent;
-        border-top-color: white;
-    }
-    
-    /* Hero section styles */
+    /* Hero */
     .hero-section {
-        padding: 6rem 1rem;
+        padding: 5rem 1rem;
         margin-bottom: 3rem;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(249, 250, 251, 0.9) 100%);
+        background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(249,250,251,0.9) 100%);
         backdrop-filter: blur(10px);
         border-radius: 1.5rem;
-        border: 2px solid rgba(220, 38, 38, 0.1);
-        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 20px 25px -5px rgba(220, 38, 38, 0.1);
+        border: 2px solid rgba(220,38,38,0.1);
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15), 0 20px 25px -5px rgba(220,38,38,0.1);
         position: relative;
         overflow: hidden;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    
-    .hero-section:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.2), 0 25px 30px -5px rgba(220, 38, 38, 0.15);
-    }
-    
-    .hero-section::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(45deg, transparent 30%, rgba(220, 38, 38, 0.02) 50%, transparent 70%),
-                    linear-gradient(-45deg, transparent 30%, rgba(234, 88, 12, 0.02) 50%, transparent 70%);
-        pointer-events: none;
-    }
-    
     .hero-section::after {
         content: '';
         position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(220, 38, 38, 0.03) 0%, transparent 70%);
+        top: -50%; right: -50%;
+        width: 200%; height: 200%;
+        background: radial-gradient(circle, rgba(220,38,38,0.03) 0%, transparent 70%);
         animation: float 20s ease-in-out infinite;
         pointer-events: none;
     }
-    
     @keyframes float {
-        0%, 100% { transform: translate(0, 0) rotate(0deg); }
-        33% { transform: translate(30px, -30px) rotate(120deg); }
-        66% { transform: translate(-20px, 20px) rotate(240deg); }
+        0%, 100% { transform: translate(0,0) rotate(0deg); }
+        33%       { transform: translate(30px,-30px) rotate(120deg); }
+        66%       { transform: translate(-20px,20px) rotate(240deg); }
     }
+
+    /* ── Carousel ─────────────────────────────────────────────── */
+    .carousel-wrapper {
+        position: relative;
+        overflow: hidden;
+        border-radius: 1rem;
+    }
+    .carousel-track {
+        display: flex;
+        transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        will-change: transform;
+    }
+    .carousel-slide {
+        flex: 0 0 100%;
+        padding: 0 0.5rem;
+        box-sizing: border-box;
+    }
+    .carousel-card {
+        cursor: pointer;
+        border-radius: 1rem;
+        overflow: hidden;
+        background: white;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+        transition: box-shadow 0.3s ease, transform 0.3s ease;
+        max-width: 480px;
+        margin: 0 auto;
+    }
+    .carousel-card:hover {
+        box-shadow: 0 20px 40px rgba(0,0,0,0.18);
+        transform: translateY(-4px);
+    }
+    .carousel-card img,
+    .carousel-card .no-image {
+        width: 100%;
+        height: 260px;
+        object-fit: cover;
+    }
+    .carousel-card .no-image {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #e5e7eb;
+        height: 260px;
+    }
+    .carousel-card .card-body {
+        padding: 1.25rem 1.5rem 1.5rem;
+    }
+
+    /* Dot indicators */
+    .carousel-dots {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1.25rem;
+    }
+    .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #d1d5db;
+        border: none;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.3s;
+        padding: 0;
+    }
+    .dot.active {
+        background: #dc2626;
+        transform: scale(1.3);
+    }
+
+    /* Prev / Next arrows */
+    .carousel-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: white;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        transition: background 0.2s, box-shadow 0.2s;
+    }
+    .carousel-btn:hover {
+        background: #f9fafb;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+    }
+    .carousel-btn.prev { left: 0.5rem; }
+    .carousel-btn.next { right: 0.5rem; }
 </style>
+
 {% if 'user_id' not in session %}
-    <script>
-        window.location.href = "{{ url_for('landing') }}";
-    </script>
+    <script>window.location.href = "{{ url_for('landing') }}";</script>
 {% else %}
-    <!-- Enhanced Hero Section for logged-in users -->
+
+{% set all_cars = cars if cars else [] %}
+{% set has_cars = all_cars|length > 0 %}
+
+<!-- ── Hero ────────────────────────────────────────────────────── -->
+{% if not has_cars %}
     <div class="hero-section text-center relative">
         <div class="relative z-10">
-            <div class="mb-6">
-                <span class="inline-block px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-full text-sm font-semibold mb-4 animate-pulse">
-                    🏁 Welcome Back!
-                </span>
-            </div>
-            <h1 class="text-6xl font-bold text-black-900 mb-6 tracking-tight leading-tight">
+            <span class="inline-block px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-full text-sm font-semibold mb-4 animate-pulse">
+                🏁 Welcome Back!
+            </span>
+            <h1 class="text-6xl font-bold text-gray-900 mb-6 tracking-tight leading-tight">
                 Your Digital
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">
-                    Garage
-                </span>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-800">Garage</span>
                 🏁
             </h1>
-            <p class="text-2xl text-gray-800 mb-10 max-w-4xl mx-auto tracking-wide font-medium leading-relaxed">
-                Track, maintain, and manage your vehicle collection with ease. Keep detailed records of maintenance, 
-                aftermarket parts, and scheduled services all in one beautiful, intuitive platform.
+            <p class="text-2xl text-gray-700 mb-10 max-w-4xl mx-auto font-medium leading-relaxed">
+                Track, maintain, and manage your vehicle collection with ease.
             </p>
-            
             <div class="flex flex-wrap justify-center gap-6 mb-8">
-                <a href="{{ url_for('cars') }}" class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-xl text-xl transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-red-500/25 inline-flex items-center">
-                    <i class="fas fa-garage mr-2"></i>
-                    View My Garage
-                </a>
-                <button onclick="openAddCarModal()" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-4 px-8 rounded-xl text-xl transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-gray-500/25 inline-flex items-center">
+                <button onclick="openAddCarModal()" class="bg-gray-700 hover:bg-gray-800 text-white font-bold py-4 px-8 rounded-xl text-xl transition-all duration-300 transform hover:scale-105 shadow-xl inline-flex items-center">
                     <i class="fas fa-plus mr-2"></i>
-                    Add New Vehicle
+                    Add Your First Vehicle
                 </button>
             </div>
-            
             <div class="flex justify-center space-x-8 text-gray-600">
                 <div class="flex items-center">
                     <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                    <span>{{ cars|length if cars else 0 }} Vehicles</span>
+                    <span>{{ all_cars|length }} Vehicle{{ 's' if all_cars|length != 1 else '' }}</span>
                 </div>
                 <div class="flex items-center">
                     <i class="fas fa-tools text-blue-500 mr-2"></i>
@@ -177,407 +209,396 @@
             </div>
         </div>
     </div>
+{% endif %}
 
-    <!-- Add Car Modal -->
-    <div id="addCarModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
-            <button onclick="closeAddCarModal()" class="modal-close">&times;</button>
-            
-            <div class="text-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-900">Add New Vehicle</h2>
+{% if has_cars %}
+<!-- ── Carousel ────────────────────────────────────────────────── -->
+<div class="mb-12">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">
+        <span class="inline-block px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-full text-md font-semibold mb-4 animate-pulse">
+            🏁 Welcome Back!
+        </span>
+    </h2>
+
+    <div class="carousel-wrapper" id="carouselWrapper">
+        <!-- Prev -->
+        <button class="carousel-btn prev" id="prevBtn" aria-label="Previous">
+            <i class="fas fa-chevron-left text-gray-600"></i>
+        </button>
+
+        <div class="carousel-track" id="carouselTrack">
+            {% for car in all_cars %}
+            <div class="carousel-slide">
+                <a href="{{ url_for('car_detail', car_id=car.id) }}" class="carousel-card block no-underline text-inherit" style="text-decoration:none; color:inherit;">
+                    <div class="relative">
+                        {% if car.image_path %}
+                        <img src="{{ url_for('uploaded_file', filename=car.image_path) }}"
+                            alt="{{ car.year }} {{ car.make }} {{ car.model }}">
+                        {% else %}
+                        <div class="no-image">
+                            <i class="fas fa-car text-gray-400 text-6xl"></i>
+                        </div>
+                        {% endif %}
+                        {% if car.status == 'past' %}
+                        <div class="absolute top-0 left-0 right-0 bg-red-600 text-white text-center py-2">
+                            <span class="text-sm font-semibold">
+                                {% if car.reason %}
+                                    {{ car.reason }}
+                                {% else %}
+                                    No Longer in Garage
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% else %}
+                        <div class="absolute top-3 right-3">
+                            <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-semibold">Active</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">{{ car.year }} {{ car.make }} {{ car.model }}</h3>
+                        {% if car.miles %}
+                        <p class="text-gray-600 text-sm mb-1">
+                            <i class="fas fa-tachometer-alt mr-1"></i>{{ car.miles|round|int }} miles
+                        </p>
+                        {% endif %}
+                        {% if car.hours %}
+                        <p class="text-gray-600 text-sm mb-1">
+                            <i class="fas fa-clock mr-1"></i>{{ car.hours|round|int }} hours
+                        </p>
+                        {% endif %}
+                        {% if car.vin %}
+                        <p class="text-gray-500 text-xs mt-2 font-mono">
+                            <i class="fas fa-barcode mr-1"></i>{{ car.vin }}
+                        </p>
+                        {% endif %}
+                    </div>
+                </a>
             </div>
-            
-            <form id="addCarForm" action="{{ url_for('add_car') }}" method="POST" enctype="multipart/form-data">
-                <div class="space-y-4">
-                    <div>
-                        <label for="vehicle-type" class="block text-sm font-medium text-gray-700">Vehicle Type</label>
-                        <select id="vehicle-type" name="vehicle_type" required 
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                        placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                        focus:border-blue-500 sm:text-sm">
-                            <option value="">Select Type</option>
-                            <option value="Car">Car</option>
-                            <option value="Truck">Truck</option>
-                            <option value="Motorcycle">Motorcycle</option>
-                            <option value="Boat">Boat</option>
-                            <option value="RV">RV</option>
-                        </select>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="make" class="block text-sm font-medium text-gray-700">Make</label>
-                            <input id="make" name="make" type="text" required 
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., Toyota">
-                        </div>
-                        <div>
-                            <label for="model" class="block text-sm font-medium text-gray-700">Model</label>
-                            <input id="model" name="model" type="text" required 
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., Camry">
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="year" class="block text-sm font-medium text-gray-700">Year</label>
-                            <input id="year" name="year" type="number" required 
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., 2023">
-                        </div>
-                        <div>
-                            <label for="vin" class="block text-sm font-medium text-gray-700">VIN Number (optional)</label>
-                            <input id="vin" name="vin" type="text" 
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., 1HGCM82633A123456">
-                        </div>
-                        <div id="purchase_mileage_field">
-                            <label for="purchase_mileage" class="block text-sm font-medium text-gray-700">Miles When Purchased (optional)</label>
-                            <input id="purchase_mileage" name="purchase_mileage" type="number" step="0.1"
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., 25000">
-                        </div>
-                        <div id="purchase_hours_field" style="display: none;">
-                            <label for="purchase_hours" class="block text-sm font-medium text-gray-700">Hours When Purchased (optional)</label>
-                            <input id="purchase_hours" name="purchase_hours" type="number" step="0.1"
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., 150.5">
-                        </div>
-                        <div id="miles-field" style="display: none;">
-                            <label for="miles" class="block text-sm font-medium text-gray-700">Current Miles (optional)</label>
-                            <input id="miles" name="miles" type="number" step="0.1"
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., 35000">
-                        </div>
-                        <div id="hours-field" style="display: none;">
-                            <label for="hours" class="block text-sm font-medium text-gray-700">Current Hours (Boat Only)</label>
-                            <input id="hours" name="hours" type="number" step="0.1"
-                                class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                    placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                    focus:border-blue-500 sm:text-sm" 
-                                placeholder="e.g., 250.5">
-                        </div>
-                        <div>
-                            <label for="image" class="block text-sm font-medium text-gray-700">Vehicle Image (optional)</label>
-                            <div class="drag-drop-area" id="index-modal-drop-zone" 
-                                ondrop="handleDrop(event, 'index_modal_image')" 
-                                ondragover="handleDragOver(event)" 
-                                ondragleave="handleDragLeave(event)">
-                                <div class="drag-drop-content">
-                                    <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                                    </svg>
-                                    <p class="text-sm text-gray-600">Drag & drop vehicle image here or</p>
-                                    <input id="index_modal_image" name="image" type="file" accept="image/*"
-                                        class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 
-                                        text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 
-                                        focus:border-blue-500 sm:text-sm">
-                                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Next -->
+        <button class="carousel-btn next" id="nextBtn" aria-label="Next">
+            <i class="fas fa-chevron-right text-gray-600"></i>
+        </button>
+    </div>
+
+    <!-- Dots -->
+    <div class="carousel-dots" id="carouselDots">
+        {% for car in all_cars %}
+        <button class="dot {% if loop.first %}active{% endif %}" data-index="{{ loop.index0 }}" aria-label="Slide {{ loop.index }}"></button>
+        {% endfor %}
+    </div>
+
+    <!-- Slide counter -->
+    <p class="text-center text-gray-400 text-sm mt-3">
+        <span id="slideCounter">1</span> / {{ all_cars|length }}
+    </p>
+</div>
+{% endif %}
+
+<!-- ── Stats row ───────────────────────────────────────────────── -->
+<div class="py-12 rounded-2xl shadow-sm mb-8">
+    <h2 class="text-2xl font-bold text-center text-gray-900 mb-8">Your Garage at a Glance</h2>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 px-6">
+
+        <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105">
+            <div class="bg-gray-50 p-6 rounded-xl text-center border border-gray-100">
+                <div class="text-3xl font-bold text-red-600">{{ all_cars|length }}</div>
+                <div class="text-gray-600 mt-1">Total Vehicles</div>
+            </div>
+            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 bg-white rounded-xl shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                <h4 class="font-semibold text-gray-800 mb-3">All Vehicles</h4>
+                <div class="space-y-2 max-h-48 overflow-y-auto">
+                    {% if all_cars %}
+                        {% for car in all_cars %}
+                        <a href="{{ url_for('car_detail', car_id=car.id) }}" class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded" style="text-decoration:none;color:inherit;">
+                            {% if car.image_path %}
+                            <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" class="w-10 h-10 object-cover rounded">
+                            {% else %}
+                            <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center"><i class="fas fa-car text-gray-400 text-sm"></i></div>
+                            {% endif %}
+                            <div>
+                                <p class="font-medium text-gray-800 text-sm">{{ car.year }} {{ car.make }} {{ car.model }}</p>
+                                <p class="text-xs text-gray-500">{{ car.vehicle_type }} • {% if car.status == 'active' %}<span class="text-green-500">Active</span>{% else %}<span class="text-gray-400">Past</span>{% endif %}</p>
                             </div>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-500 text-center py-4 text-sm">No vehicles yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105">
+            <div class="bg-gray-50 p-6 rounded-xl text-center border border-gray-100">
+                <div class="text-3xl font-bold text-green-600">{{ all_cars|selectattr('status','equalto','active')|list|length }}</div>
+                <div class="text-gray-600 mt-1">Active</div>
+            </div>
+            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 bg-white rounded-xl shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                <h4 class="font-semibold text-gray-800 mb-3">Current Vehicles</h4>
+                <div class="space-y-2 max-h-48 overflow-y-auto">
+                    {% set active_list = all_cars|selectattr('status','equalto','active')|list %}
+                    {% if active_list %}
+                        {% for car in active_list %}
+                        <a href="{{ url_for('car_detail', car_id=car.id) }}" class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded" style="text-decoration:none;color:inherit;">
+                            {% if car.image_path %}
+                            <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" class="w-10 h-10 object-cover rounded">
+                            {% else %}
+                            <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center"><i class="fas fa-car text-gray-400 text-sm"></i></div>
+                            {% endif %}
+                            <div>
+                                <p class="font-medium text-gray-800 text-sm">{{ car.year }} {{ car.make }} {{ car.model }}</p>
+                                <p class="text-xs text-gray-500">{{ car.vehicle_type }}{% if car.miles %} • {{ car.miles|round|int }} mi{% endif %}</p>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-500 text-center py-4 text-sm">No active vehicles</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105">
+            <div class="bg-gray-50 p-6 rounded-xl text-center border border-gray-100">
+                <div class="text-3xl font-bold text-red-600">{{ all_cars|selectattr('status','equalto','past')|list|length }}</div>
+                <div class="text-gray-600 mt-1">Past Vehicles</div>
+            </div>
+            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 bg-white rounded-xl shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                <h4 class="font-semibold text-gray-800 mb-3">Previous Vehicles</h4>
+                <div class="space-y-2 max-h-48 overflow-y-auto">
+                    {% set past_list = all_cars|selectattr('status','equalto','past')|list %}
+                    {% if past_list %}
+                        {% for car in past_list %}
+                        <a href="{{ url_for('car_detail', car_id=car.id) }}" class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded" style="text-decoration:none;color:inherit;">
+                            {% if car.image_path %}
+                            <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" class="w-10 h-10 object-cover rounded">
+                            {% else %}
+                            <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center"><i class="fas fa-car text-gray-400 text-sm"></i></div>
+                            {% endif %}
+                            <div>
+                                <p class="font-medium text-gray-800 text-sm">{{ car.year }} {{ car.make }} {{ car.model }}</p>
+                                <p class="text-xs text-gray-500">{{ car.vehicle_type }}{% if car.reason %} • {{ car.reason }}{% endif %}</p>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-500 text-center py-4 text-sm">No past vehicles</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105">
+            <div class="bg-gray-50 p-6 rounded-xl text-center border border-gray-100">
+                <div class="text-3xl font-bold text-purple-600">🔧</div>
+                <div class="text-gray-600 mt-1">Services Tracked</div>
+            </div>
+            <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 bg-white rounded-xl shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                <h4 class="font-semibold text-gray-800 mb-3">Service Tracking</h4>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"><i class="fas fa-wrench text-blue-600"></i></div>
+                        <div><p class="font-medium text-gray-800 text-sm">Maintenance Records</p><p class="text-xs text-gray-500">Track all services and repairs</p></div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center"><i class="fas fa-cog text-green-600"></i></div>
+                        <div><p class="font-medium text-gray-800 text-sm">Aftermarket Parts</p><p class="text-xs text-gray-500">Monitor modifications and upgrades</p></div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center"><i class="fas fa-calendar text-purple-600"></i></div>
+                        <div><p class="font-medium text-gray-800 text-sm">Service Schedules</p><p class="text-xs text-gray-500">Never miss important intervals</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div class="text-center mt-8">
+        <a href="{{ url_for('adv_garage') }}" class="bg-racing-red hover:bg-racing-red-dark text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-colors">
+            View Detailed Dashboard
+        </a>
+    </div>
+</div>
+
+
+<!-- ── Add Car Modal ───────────────────────────────────────────── -->
+<div id="addCarModal" class="modal-overlay">
+    <div class="modal-content">
+        <button onclick="closeAddCarModal()" class="modal-close">&times;</button>
+        <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Add New Vehicle</h2>
+        </div>
+        <form id="addCarForm" action="{{ url_for('add_car') }}" method="POST" enctype="multipart/form-data">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Vehicle Type</label>
+                    <select id="vehicle-type" name="vehicle_type" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        <option value="">Select Type</option>
+                        <option value="Car">Car</option>
+                        <option value="Truck">Truck</option>
+                        <option value="Motorcycle">Motorcycle</option>
+                        <option value="Boat">Boat</option>
+                        <option value="RV">RV</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Make</label>
+                        <input name="make" type="text" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., Toyota">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Model</label>
+                        <input name="model" type="text" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., Camry">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Year</label>
+                        <input name="year" type="number" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 2023">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">VIN (optional)</label>
+                        <input name="vin" type="text" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 1HGCM82633A123456">
+                    </div>
+                    <div id="purchase_mileage_field">
+                        <label class="block text-sm font-medium text-gray-700">Miles When Purchased (optional)</label>
+                        <input id="purchase_mileage" name="purchase_mileage" type="number" step="0.1" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 25000">
+                    </div>
+                    <div id="purchase_hours_field" style="display:none;">
+                        <label class="block text-sm font-medium text-gray-700">Hours When Purchased (optional)</label>
+                        <input id="purchase_hours" name="purchase_hours" type="number" step="0.1" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 150.5">
+                    </div>
+                    <div id="miles-field" style="display:none;">
+                        <label class="block text-sm font-medium text-gray-700">Current Miles (optional)</label>
+                        <input id="miles" name="miles" type="number" step="0.1" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 35000">
+                    </div>
+                    <div id="hours-field" style="display:none;">
+                        <label class="block text-sm font-medium text-gray-700">Current Hours (Boat Only)</label>
+                        <input id="hours" name="hours" type="number" step="0.1" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 250.5">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Purchase Date (optional)</label>
+                        <input name="purchase_date" type="date" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Vehicle Image (optional)</label>
+                        <div class="drag-drop-area" id="index-modal-drop-zone"
+                            ondrop="handleDrop(event,'index_modal_image')"
+                            ondragover="handleDragOver(event)"
+                            ondragleave="handleDragLeave(event)">
+                            <svg class="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                            </svg>
+                            <p class="text-sm text-gray-600 drag-drop-content">Drag & drop image here or</p>
+                            <input id="index_modal_image" name="image" type="file" accept="image/*" class="mt-2 block w-full text-sm">
                         </div>
                     </div>
                 </div>
-
                 <div class="mt-6">
-                    <button type="submit" 
-                        class="group relative w-full flex justify-center py-3 px-4 border border-transparent 
-                            text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 
-                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                            shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">
-                        <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                            <svg class="h-5 w-5 text-blue-500 group-hover:text-blue-400" xmlns="http://www.w3.org/2000/svg" 
-                                viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 006 0zm-7 9a7 7 0 1114 0H3a2 2 0 00-2 2v6a2 2 0 002 2H5a2 2 0 002-2v-6a2 2 0 00-2-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" clip-rule="evenodd" />
-                            </svg>
-                        </span>
+                    <button type="submit" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
                         Add Vehicle
                     </button>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
-
-    <!-- Quick Stats for logged-in users -->
-    <div class="py-12 bg-navy-100 rounded-lg">
-        <h2 class="text-2xl font-bold text-center text-gray-900 mb-8">Your Garage at a Glance</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <!-- Total Vehicles Card -->
-            <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105">
-                <div class="bg-white p-6 rounded-lg shadow text-center">
-                    <div class="text-3xl font-bold text-red-600">{{ cars|length if cars else 0 }}</div>
-                    <div class="text-gray-600">Total Vehicles</div>
-                </div>
-                <!-- Popup -->
-                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 bg-white rounded-lg shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-                    <h4 class="font-semibold text-gray-800 mb-3">All Your Vehicles</h4>
-                    <div class="space-y-2 max-h-48 overflow-y-auto">
-                        {% if cars %}
-                            {% for car in cars %}
-                            <a href="{{ url_for('car_detail', car_id=car.id) }}" class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded text-gray-800 no-underline">
-                                {% if car.image_path %}
-                                <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" 
-                                    alt="{{ car.make }} {{ car.model }}" 
-                                    class="w-10 h-10 object-cover rounded">
-                                {% else %}
-                                <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
-                                    <i class="fas fa-car text-gray-400 text-sm"></i>
-                                </div>
-                                {% endif %}
-                                <div class="flex-1">
-                                    <p class="font-medium text-gray-800">{{ car.year }} {{ car.make }} {{ car.model }}</p>
-                                    <p class="text-sm text-gray-500">{{ car.vehicle_type }} • 
-                                        {% if car.status == 'active' %}
-                                            <span class="text-green-500">Active</span>
-                                        {% else %}
-                                            <span class="text-gray-600">Past</span>
-                                        {% endif %}
-                                    </p>
-                                </div>
-                            </a>
-                            {% endfor %}
-                        {% else %}
-                            <p class="text-gray-500 text-center py-4">No vehicles yet</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Active Vehicles Card -->
-            <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105">
-                <div class="bg-white p-6 rounded-lg shadow text-center">
-                    <div class="text-3xl font-bold text-gray-600">{{ cars|selectattr('status', 'equalto', 'active')|list|length if cars else 0 }}</div>
-                    <div class="text-gray-600">Active</div>
-                </div>
-                <!-- Popup -->
-                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 bg-white rounded-lg shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-                    <h4 class="font-semibold text-gray-800 mb-3">Current Vehicles</h4>
-                    <div class="space-y-2 max-h-48 overflow-y-auto">
-                        {% set active_cars = cars|selectattr('status', 'equalto', 'active')|list %}
-                        {% if active_cars %}
-                            {% for car in active_cars %}
-                            <a href="{{ url_for('car_detail', car_id=car.id) }}" class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded text-gray-800 no-underline">
-                                {% if car.image_path %}
-                                <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" 
-                                    alt="{{ car.make }} {{ car.model }}" 
-                                    class="w-10 h-10 object-cover rounded">
-                                {% else %}
-                                <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
-                                    <i class="fas fa-car text-gray-400 text-sm"></i>
-                                </div>
-                                {% endif %}
-                                <div class="flex-1">
-                                    <p class="font-medium text-gray-800">{{ car.year }} {{ car.make }} {{ car.model }}</p>
-                                    <p class="text-sm text-gray-500">{{ car.vehicle_type }}{% if car.miles %} • {{ car.miles }} miles{% endif %}</p>
-                                </div>
-                            </a>
-                            {% endfor %}
-                        {% else %}
-                            <p class="text-gray-500 text-center py-4">No active vehicles</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Past Vehicles Card -->
-            <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105">
-                <div class="bg-white p-6 rounded-lg shadow text-center">
-                    <div class="text-3xl font-bold text-red-600">{{ cars|selectattr('status', 'equalto', 'past')|list|length if cars else 0 }}</div>
-                    <div class="text-gray-600">Past Vehicles</div>
-                </div>
-                <!-- Popup -->
-                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 bg-white rounded-lg shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-                    <h4 class="font-semibold text-gray-800 mb-3">Previous Vehicles</h4>
-                    <div class="space-y-2 max-h-48 overflow-y-auto">
-                        {% set past_cars = cars|selectattr('status', 'equalto', 'past')|list %}
-                        {% if past_cars %}
-                            {% for car in past_cars %}
-                            <a href="{{ url_for('car_detail', car_id=car.id) }}" class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded text-gray-800 no-underline">
-                                {% if car.image_path %}
-                                <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" 
-                                    alt="{{ car.make }} {{ car.model }}" 
-                                    class="w-10 h-10 object-cover rounded">
-                                {% else %}
-                                <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
-                                    <i class="fas fa-car text-gray-400 text-sm"></i>
-                                </div>
-                                {% endif %}
-                                <div class="flex-1">
-                                    <p class="font-medium text-gray-800">{{ car.year }} {{ car.make }} {{ car.model }}</p>
-                                    <p class="text-sm text-gray-500">{{ car.vehicle_type }}{% if car.reason %} • {{ car.reason }}{% endif %}</p>
-                                </div>
-                            </a>
-                            {% endfor %}
-                        {% else %}
-                            <p class="text-gray-500 text-center py-4">No past vehicles</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Services Tracked Card -->
-            <div class="relative group cursor-pointer transform transition-all duration-300 hover:scale-105">
-                <div class="bg-white p-6 rounded-lg shadow text-center">
-                    <div class="text-3xl font-bold text-purple-600">🔧</div>
-                    <div class="text-gray-600">Services Tracked</div>
-                </div>
-                <!-- Popup -->
-                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-80 bg-white rounded-lg shadow-2xl p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
-                    <h4 class="font-semibold text-gray-800 mb-3">Service Tracking</h4>
-                    <div class="space-y-3">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                <i class="fas fa-wrench text-blue-600"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-gray-800">Maintenance Records</p>
-                                <p class="text-sm text-gray-500">Track all services and repairs</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                <i class="fas fa-cog text-green-600"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-gray-800">Aftermarket Parts</p>
-                                <p class="text-sm text-gray-500">Monitor modifications and upgrades</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                                <i class="fas fa-calendar text-purple-600"></i>
-                            </div>
-                            <div>
-                                <p class="font-medium text-gray-800">Service Schedules</p>
-                                <p class="text-sm text-gray-500">Never miss important intervals</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-3 pt-3 border-t">
-                        <p class="text-xs text-gray-500 text-center">Click on any vehicle to see detailed service history</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="text-center mt-8">
-            <a href="{{ url_for('adv_garage') }}" class="bg-racing-red hover:bg-racing-red-dark text-white font-bold py-4 px-8 rounded transition-colors">
-                View Detailed Garage
-            </a>
-        </div>
-    </div>
-{% endif %}
+</div>
 
 <script>
-    function openAddCarModal() {
-        console.log('Opening add car modal');
-        document.getElementById('addCarModal').classList.add('active');
-        document.body.style.overflow = 'hidden';
-        // Initialize field visibility
-        toggleHoursField();
+// ── Carousel ───────────────────────────────────────────────────
+(function() {
+    const track   = document.getElementById('carouselTrack');
+    if (!track) return;
+
+    const slides  = track.querySelectorAll('.carousel-slide');
+    const dots    = document.querySelectorAll('.dot');
+    const counter = document.getElementById('slideCounter');
+    const total   = slides.length;
+    let current   = 0;
+    let timer     = null;
+
+    function goTo(index) {
+        current = (index + total) % total;
+        track.style.transform = `translateX(-${current * 100}%)`;
+        dots.forEach((d, i) => d.classList.toggle('active', i === current));
+        if (counter) counter.textContent = current + 1;
     }
 
-    function closeAddCarModal() {
-        console.log('Closing add car modal');
-        document.getElementById('addCarModal').classList.remove('active');
-        document.body.style.overflow = 'auto';
+    function next() { goTo(current + 1); }
+    function prev() { goTo(current - 1); }
+
+    function startAuto() {
+        stopAuto();
+        timer = setInterval(next, 4000);
+    }
+    function stopAuto() {
+        if (timer) { clearInterval(timer); timer = null; }
     }
 
-    function toggleHoursField() {        
-        const vehicleSelect = document.getElementById('vehicle-type') || document.querySelector('select[name="vehicle_type"]');
-        if (!vehicleSelect) {
-            return;
-        }
-        
-        const vehicleType = vehicleSelect.value;
-        const hoursField = document.getElementById('hours-field');
-        const milesField = document.getElementById('miles-field');
-        const purchaseHoursField = document.getElementById('purchase_hours_field');
-        const purchaseMileageField = document.getElementById('purchase_mileage_field');
-                
-        if (vehicleType === 'Boat') {
-            // Show hours fields, hide miles fields
-            hoursField.style.display = 'block';
-            purchaseHoursField.style.display = 'block';
-            milesField.style.display = 'none';
-            purchaseMileageField.style.display = 'none';
-        } else {
-            // Show miles fields, hide hours fields
-            hoursField.style.display = 'none';
-            purchaseHoursField.style.display = 'none';
-            milesField.style.display = 'block';
-            purchaseMileageField.style.display = 'block';
-        }
-    }
+    document.getElementById('nextBtn')?.addEventListener('click', () => { stopAuto(); next(); startAuto(); });
+    document.getElementById('prevBtn')?.addEventListener('click', () => { stopAuto(); prev(); startAuto(); });
 
-    // Handle form submission - use normal submission for better compatibility
-    document.getElementById('addCarForm').addEventListener('submit', function(e) {
-        // Let the form submit normally, but override the redirect
-        e.preventDefault();
-        
-        const formData = new FormData(this);
-        
-        fetch(this.action, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (response.ok) {
-                // Close modal and redirect to cars page
-                closeAddCarModal();
-                window.location.href = "{{ url_for('cars') }}";
-            } else {
-                // Show error and fallback to normal submission
-                console.error('Server responded with error:', response.status);
-                alert('Error adding vehicle. Submitting normally...');
-                this.submit();
-            }
-        })
-        .catch(error => {
-            console.error('Fetch error:', error);
-            // Fallback to normal form submission
-            alert('Network error. Submitting normally...');
-            this.submit();
+    dots.forEach(dot => {
+        dot.addEventListener('click', () => {
+            stopAuto();
+            goTo(parseInt(dot.dataset.index));
+            startAuto();
         });
     });
 
-    // Close modal when clicking outside
-    document.getElementById('addCarModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeAddCarModal();
-        }
+    // Pause on hover
+    const wrapper = document.getElementById('carouselWrapper');
+    wrapper?.addEventListener('mouseenter', stopAuto);
+    wrapper?.addEventListener('mouseleave', startAuto);
+
+    // Touch swipe support
+    let touchStartX = 0;
+    wrapper?.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    wrapper?.addEventListener('touchend', e => {
+        const diff = touchStartX - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 50) { stopAuto(); diff > 0 ? next() : prev(); startAuto(); }
     });
 
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeAddCarModal();
-        }
-    });
+    startAuto();
+})();
 
-    // Add event listener
-    document.addEventListener('DOMContentLoaded', function() {
-        const vehicleSelect = document.getElementById('vehicle-type');
-        if (vehicleSelect) {
-            vehicleSelect.addEventListener('change', toggleHoursField);
-            toggleHoursField(); // Initialize on page load
-        }
-    });
+// ── Add Car Modal ──────────────────────────────────────────────
+function openAddCarModal() {
+    document.getElementById('addCarModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    toggleHoursField();
+}
+function closeAddCarModal() {
+    document.getElementById('addCarModal').classList.remove('active');
+    document.body.style.overflow = 'auto';
+}
+function toggleHoursField() {
+    const sel = document.getElementById('vehicle-type');
+    if (!sel) return;
+    const isBoat = sel.value === 'Boat';
+    document.getElementById('hours-field').style.display          = isBoat ? 'block' : 'none';
+    document.getElementById('purchase_hours_field').style.display = isBoat ? 'block' : 'none';
+    document.getElementById('miles-field').style.display          = isBoat ? 'none'  : 'block';
+    document.getElementById('purchase_mileage_field').style.display = isBoat ? 'none' : 'block';
+}
+
+document.getElementById('addCarForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    fetch(this.action, { method: 'POST', body: new FormData(this) })
+        .then(r => { if (r.ok) { closeAddCarModal(); window.location.href = "{{ url_for('cars') }}"; } else { this.submit(); } })
+        .catch(() => this.submit());
+});
+document.getElementById('addCarModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeAddCarModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAddCarModal(); });
+document.addEventListener('DOMContentLoaded', () => {
+    const sel = document.getElementById('vehicle-type');
+    if (sel) { sel.addEventListener('change', toggleHoursField); toggleHoursField(); }
+});
 </script>
 
+{% endif %}
 {% endblock %}

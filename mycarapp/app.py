@@ -324,7 +324,14 @@ def home():
         return redirect(url_for('landing'))
     
     conn = get_db_connection()
-    cars_list = conn.execute("SELECT * FROM cars WHERE user_id = ?", (session['user_id'],)).fetchall()
+    conn.row_factory = sqlite3.Row
+    
+    # Get all cars (both active and past) for the carousel and stats
+    cars_list = conn.execute(
+        'SELECT * FROM cars WHERE user_id = ? ORDER BY status DESC, make, model',
+        (session['user_id'],)
+    ).fetchall()
+    
     conn.close()
     return render_template("index.html", cars=cars_list)
 
@@ -1006,7 +1013,7 @@ def edit_part(car_id, part_id):
             with sqlite3.connect(DATABASE) as conn:
                 c = conn.cursor()
                 current_part = c.execute("SELECT receipt_image FROM aftermarket_parts WHERE id = ? AND car_id = ?", 
-                                       (part_id, car_id)).fetchone()
+                    (part_id, car_id)).fetchone()
                 
                 # Use existing filename if available, otherwise create new one
                 if current_part and current_part[0]:
@@ -1112,7 +1119,14 @@ def delete_scheduled(car_id, scheduled_id):
 @login_required
 def update_car_status(car_id):
     reason = request.form.get('reason', '')
+    custom_reason = request.form.get('custom_reason', '')
     sold_mileage = request.form.get('sold_mileage')
+    
+    # Use custom reason if "Other" was selected
+    if reason == 'Other' and custom_reason:
+        final_reason = custom_reason
+    else:
+        final_reason = reason
     
     if sold_mileage:
         try:
@@ -1126,7 +1140,7 @@ def update_car_status(car_id):
     conn = get_db_connection()
     conn.execute(
         'UPDATE cars SET status = ?, reason = ?, sold_mileage = ? WHERE id = ? AND user_id = ?',
-        ('past', reason, sold_mileage, car_id, session['user_id'])
+        ('past', final_reason, sold_mileage, car_id, session['user_id'])
     )
     conn.commit()
     conn.close()
