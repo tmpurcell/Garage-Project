@@ -383,14 +383,14 @@ def adv_garage():
         car_parts = [dict(p) for p in parts_data if str(p['id']) == car_id]
         maintenance_cost = sum(m['cost'] or 0 for m in car_maintenance)
         parts_cost = sum(p['cost'] or 0 for p in car_parts)
-        total_cost = maintenance_cost + parts_cost
+        car_total_cost = maintenance_cost + parts_cost
         cars_with_data[car_id] = {
             'car': dict(car),
             'maintenance': car_maintenance,
             'parts': car_parts,
             'maintenance_cost': maintenance_cost,
             'parts_cost': parts_cost,
-            'total_cost': total_cost
+            'total_cost': car_total_cost
         }
     
     def group_by_vehicle_type(cars_list):
