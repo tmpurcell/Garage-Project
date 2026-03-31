@@ -736,13 +736,18 @@ def edit_car(car_id):
             file = request.files['image']
             if file.filename != '':
                 if allowed_file(file.filename):
+                    # Use existing filename if available, otherwise create new one
                     if car['image_path']:
+                        filename = car['image_path']
+                        # Remove old file to ensure clean overwrite
                         try:
-                            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], car['image_path']))
+                            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                         except OSError:
                             pass
-                    filename = secure_filename(file.filename)
-                    filename = f"{int(time.time())}_{filename}"
+                    else:
+                        filename = secure_filename(file.filename)
+                        filename = f"{int(time.time())}_{filename}"
+                    
                     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                     
                     # Compress image if it's an image file (not PDF)
@@ -884,20 +889,35 @@ def edit_maintenance(car_id, record_id):
     if 'receipt_image' in request.files:
         file = request.files['receipt_image']
         if file.filename != '' and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            filename = f"{int(time.time())}_{filename}"
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            
-            # Compress image if it's an image file (not PDF)
-            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
-                compressed_data = compress_image(file.stream)
-                with open(file_path, 'wb') as f:
-                    f.write(compressed_data)
-            else:
-                # Save PDF as-is
-                file.save(file_path)
-            
-            receipt_image = filename
+            with sqlite3.connect(DATABASE) as conn:
+                c = conn.cursor()
+                current = c.execute("SELECT receipt_image FROM maintenance_records WHERE id = ? AND car_id = ?", 
+                                   (record_id, car_id)).fetchone()
+                
+                # Use existing filename if available, otherwise create new one
+                if current and current[0]:
+                    filename = current[0]
+                    # Remove old file to ensure clean overwrite
+                    try:
+                        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    except OSError:
+                        pass
+                else:
+                    filename = secure_filename(file.filename)
+                    filename = f"{int(time.time())}_{filename}"
+                
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                
+                # Compress image if it's an image file (not PDF)
+                if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+                    compressed_data = compress_image(file.stream)
+                    with open(file_path, 'wb') as f:
+                        f.write(compressed_data)
+                else:
+                    # Save PDF as-is
+                    file.save(file_path)
+                
+                receipt_image = filename
     
     with sqlite3.connect(DATABASE) as conn:
         c = conn.cursor()
@@ -983,20 +1003,35 @@ def edit_part(car_id, part_id):
     if 'receipt_image' in request.files:
         file = request.files['receipt_image']
         if file.filename != '' and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            filename = f"{int(time.time())}_{filename}"
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            
-            # Compress image if it's an image file (not PDF)
-            if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
-                compressed_data = compress_image(file.stream)
-                with open(file_path, 'wb') as f:
-                    f.write(compressed_data)
-            else:
-                # Save PDF as-is
-                file.save(file_path)
-            
-            receipt_image = filename
+            with sqlite3.connect(DATABASE) as conn:
+                c = conn.cursor()
+                current_part = c.execute("SELECT receipt_image FROM aftermarket_parts WHERE id = ? AND car_id = ?", 
+                                       (part_id, car_id)).fetchone()
+                
+                # Use existing filename if available, otherwise create new one
+                if current_part and current_part[0]:
+                    filename = current_part[0]
+                    # Remove old file to ensure clean overwrite
+                    try:
+                        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    except OSError:
+                        pass
+                else:
+                    filename = secure_filename(file.filename)
+                    filename = f"{int(time.time())}_{filename}"
+                
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                
+                # Compress image if it's an image file (not PDF)
+                if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+                    compressed_data = compress_image(file.stream)
+                    with open(file_path, 'wb') as f:
+                        f.write(compressed_data)
+                else:
+                    # Save PDF as-is
+                    file.save(file_path)
+                
+                receipt_image = filename
     
     with sqlite3.connect(DATABASE) as conn:
         c = conn.cursor()
