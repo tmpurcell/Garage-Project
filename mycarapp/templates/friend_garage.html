@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Friend Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center gap-4">
+            <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                {{ friend.first_name[0] }}{{ friend.last_name[0] }}
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">{{ friend.first_name }} {{ friend.last_name }}'s Garage</h1>
+                <p class="text-sm text-gray-600">Friend Code: {{ friend.friend_code }}</p>
+            </div>
+            <a href="{{ url_for('friends_garage') }}" class="ml-auto bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition">
+                ← Back to All Friends
+            </a>
+        </div>
+    </div>
+
+    <!-- Cars Grid -->
+    {% if cars %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for car in cars %}
+            <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow {% if car.status != 'active' %}opacity-75{% endif %}">
+                <!-- Status Badge -->
+                {% if car.status != 'active' %}
+                <div class="absolute top-2 right-2 z-10">
+                    <span class="bg-red-600 text-white text-xs px-2 py-1 rounded-full">
+                        {% if car.reason == 'Sold' %}Sold{% elif car.reason == 'Crashed/Totaled' %}Crashed{% elif car.reason == 'Traded In' %}Traded{% else %}Removed{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+                
+                <!-- Car Image -->
+                <div class="h-48 bg-gray-200 relative">
+                    {% if car.image_path %}
+                        <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" 
+                             alt="{{ car.year }} {{ car.make }} {{ car.model }}"
+                             class="w-full h-full object-cover">
+                    {% else %}
+                        <div class="w-full h-full bg-gray-200 flex items-center justify-center">
+                            <span class="text-gray-400">No image</span>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Car Details -->
+                <div class="p-4">
+                    <h3 class="text-lg font-bold text-gray-800">{{ car.year }} {{ car.make }} {{ car.model }}</h3>
+                    <p class="text-sm text-gray-600 mb-2">{{ car.vehicle_type }}</p>
+                    
+                    {% if car.vehicle_type == 'Boat' %}
+                        {% if car.hours %}
+                            <p class="text-sm text-gray-700">Hours: {{ car.hours }}</p>
+                        {% endif %}
+                    {% else %}
+                        {% if car.miles %}
+                            <p class="text-sm text-gray-700">Miles: {{ "{:,}".format(car.miles|int) }}</p>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <!-- Purchase/Sale Info -->
+                    {% if car.purchase_date %}
+                        <p class="text-xs text-gray-500">Purchased: {{ car.purchase_date }}</p>
+                    {% endif %}
+                    
+                    {% if car.sell_date %}
+                        <p class="text-xs text-gray-500">Sold: {{ car.sell_date }}</p>
+                    {% endif %}
+                    
+                    <div class="mt-3 flex items-center gap-2 text-sm {% if car.status == 'active' %}text-green-600{% else %}text-gray-500{% endif %}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span>{% if car.status == 'active' %}Public to Friends{% else %}No Longer Shared{% endif %}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Summary Stats -->
+        <div class="mt-8 bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Garage Summary</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-blue-600">
+                        {{ cars|selectattr('status', 'equalto', 'active')|list|length }}
+                    </div>
+                    <div class="text-sm text-gray-600">Current Vehicles</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-gray-600">
+                        {{ cars|selectattr('status', 'notequalto', 'active')|list|length }}
+                    </div>
+                    <div class="text-sm text-gray-600">Past Vehicles</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-green-600">
+                        {{ cars|length }}
+                    </div>
+                    <div class="text-sm text-gray-600">Total Vehicles</div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center py-16 bg-white rounded-lg shadow-md">
+            <svg class="w-24 h-24 mx-auto text-gray-400 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">No Shared Vehicles</h2>
+            <p class="text-gray-600">{{ friend.first_name }} hasn't shared any vehicles yet</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

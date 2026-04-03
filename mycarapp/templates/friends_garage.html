@@ -21,8 +21,18 @@
             </div>
 
             {% if friend_data.cars %}
+                {% if friend_data.cars|length > 3 %}
+                <div class="mb-4 flex justify-between items-center">
+                    <p class="text-sm text-gray-600">{{ friend_data.cars|length }} vehicles • Showing first 3</p>
+                    <a href="{{ url_for('friend_garage', friend_id=friend_data.user.id) }}" 
+                       class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
+                        View Full Garage →
+                    </a>
+                </div>
+                {% endif %}
+                
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {% for car in friend_data.cars %}
+                    {% for car in friend_data.cars[:3] %}
                     <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
                         <!-- Car Image -->
                         <div class="h-48 bg-gray-200">
