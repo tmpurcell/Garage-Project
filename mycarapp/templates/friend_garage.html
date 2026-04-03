@@ -25,10 +25,12 @@
             <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow {% if car.status != 'active' %}opacity-75{% endif %}">
                 <!-- Status Badge -->
                 {% if car.status != 'active' %}
-                <div class="absolute top-2 right-2 z-10">
-                    <span class="bg-red-600 text-white text-xs px-2 py-1 rounded-full">
-                        {% if car.reason == 'Sold' %}Sold{% elif car.reason == 'Crashed/Totaled' %}Crashed{% elif car.reason == 'Traded In' %}Traded{% else %}Removed{% endif %}
-                    </span>
+                <div class="absolute top-0 left-0 right-0">
+                    {% if car.reason %}
+                        {{ car.reason }}
+                    {% else %}
+                        No Longer in Garage
+                    {% endif %}
                 </div>
                 {% endif %}
                 
