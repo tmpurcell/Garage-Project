@@ -36,8 +36,8 @@
                 <div class="h-48 bg-gray-200 relative">
                     {% if car.image_path %}
                         <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" 
-                             alt="{{ car.year }} {{ car.make }} {{ car.model }}"
-                             class="w-full h-full object-cover">
+                            alt="{{ car.year }} {{ car.make }} {{ car.model }}"
+                            class="w-full h-full object-cover">
                     {% else %}
                         <div class="w-full h-full bg-gray-200 flex items-center justify-center">
                             <span class="text-gray-400">No image</span>
@@ -92,7 +92,8 @@
                 </div>
                 <div class="text-center">
                     <div class="text-3xl font-bold text-gray-600">
-                        {{ cars|selectattr('status', 'notequalto', 'active')|list|length }}
+                        {% set past_count = cars|selectattr('status')|list|length - cars|selectattr('status', 'equalto', 'active')|list|length %}
+                        {{ past_count }}
                     </div>
                     <div class="text-sm text-gray-600">Past Vehicles</div>
                 </div>
