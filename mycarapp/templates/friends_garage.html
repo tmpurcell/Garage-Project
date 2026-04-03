@@ -25,7 +25,7 @@
                 <div class="mb-4 flex justify-between items-center">
                     <p class="text-sm text-gray-600">{{ friend_data.cars|length }} vehicles • Showing first 3</p>
                     <a href="{{ url_for('friend_garage', friend_id=friend_data.user.id) }}" 
-                       class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
+                        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
                         View Full Garage →
                     </a>
                 </div>
@@ -38,8 +38,8 @@
                         <div class="h-48 bg-gray-200">
                             {% if car.image_path %}
                                 <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" 
-                                     alt="{{ car.year }} {{ car.make }} {{ car.model }}"
-                                     class="w-full h-full object-cover">
+                                    alt="{{ car.year }} {{ car.make }} {{ car.model }}"
+                                    class="w-full h-full object-cover">
                             {% else %}
                                 <div class="w-full h-full bg-gray-200 flex items-center justify-center">
                                     <span class="text-gray-400">No image</span>

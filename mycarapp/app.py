@@ -1344,15 +1344,15 @@ def friends_garage():
     conn = get_db_connection()
     conn.row_factory = sqlite3.Row
     
-    # Get friends and their cars (both active and past) - only shared ones
+    # Get friends and their cars (only active shared cars)
     friends_cars = conn.execute('''
         SELECT u.id as user_id, u.first_name, u.last_name, u.friend_code,
-            c.id as car_id, c.make, c.model, c.year, c.vehicle_type, c.image_path, c.miles, c.hours, c.status, c.reason
+               c.id as car_id, c.make, c.model, c.year, c.vehicle_type, c.image_path, c.miles, c.hours, c.status, c.reason
         FROM users u
         JOIN friendships f ON u.id = f.addressee_id
-        LEFT JOIN cars c ON u.id = c.user_id AND c.is_public_to_friends = 1
+        LEFT JOIN cars c ON u.id = c.user_id AND c.is_public_to_friends = 1 AND c.status = 'active'
         WHERE f.requester_id = ?
-        ORDER BY u.first_name, u.last_name, c.status DESC, c.make, c.model
+        ORDER BY u.first_name, u.last_name, c.make, c.model
     ''', (session['user_id'],)).fetchall()
     
     # Group cars by friend
@@ -1412,8 +1412,8 @@ def friend_garage(friend_id):
         SELECT id, make, model, year, vehicle_type, image_path, miles, hours, status, reason,
                purchase_date, purchase_mileage, sell_date, sold_mileage
         FROM cars 
-        WHERE user_id = ? AND is_public_to_friends = 1
-        ORDER BY status DESC, year DESC, make, model
+        WHERE user_id = ? AND is_public_to_friends = 1 AND status = 'active'
+        ORDER BY year DESC, make, model
     ''', (friend_id,)).fetchall()
     
     conn.close()
