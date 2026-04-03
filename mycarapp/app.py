@@ -1344,15 +1344,15 @@ def friends_garage():
     conn = get_db_connection()
     conn.row_factory = sqlite3.Row
     
-    # Get friends and their public cars
+    # Get friends and their cars (both active and past)
     friends_cars = conn.execute('''
         SELECT u.id as user_id, u.first_name, u.last_name, u.friend_code,
-               c.id as car_id, c.make, c.model, c.year, c.vehicle_type, c.image_path, c.miles, c.hours
+               c.id as car_id, c.make, c.model, c.year, c.vehicle_type, c.image_path, c.miles, c.hours, c.status, c.reason
         FROM users u
         JOIN friendships f ON u.id = f.addressee_id
-        LEFT JOIN cars c ON u.id = c.user_id AND c.status = 'active' AND c.is_public_to_friends = 1
+        LEFT JOIN cars c ON u.id = c.user_id AND c.is_public_to_friends = 1
         WHERE f.requester_id = ?
-        ORDER BY u.first_name, u.last_name, c.make, c.model
+        ORDER BY u.first_name, u.last_name, c.status DESC, c.make, c.model
     ''', (session['user_id'],)).fetchall()
     
     # Group cars by friend
@@ -1379,11 +1379,49 @@ def friends_garage():
                 'vehicle_type': row['vehicle_type'],
                 'image_path': row['image_path'],
                 'miles': row['miles'],
-                'hours': row['hours']
+                'hours': row['hours'],
+                'status': row['status'],
+                'reason': row['reason']
             })
     
     conn.close()
     return render_template('friends_garage.html', friends_data=friends_data)
+
+@app.route('/friend_garage/<int:friend_id>')
+@login_required
+def friend_garage(friend_id):
+    conn = get_db_connection()
+    conn.row_factory = sqlite3.Row
+    
+    # Verify friendship
+    friendship = conn.execute('''
+        SELECT id FROM friendships 
+        WHERE requester_id = ? AND addressee_id = ?
+    ''', (session['user_id'], friend_id)).fetchone()
+    
+    if not friendship:
+        conn.close()
+        abort(403)  # Not friends
+    
+    # Get friend info and all their public cars
+    friend_info = conn.execute('''
+        SELECT first_name, last_name, friend_code FROM users WHERE id = ?
+    ''', (friend_id,)).fetchone()
+    
+    cars = conn.execute('''
+        SELECT id, make, model, year, vehicle_type, image_path, miles, hours, status, reason,
+               purchase_date, purchase_mileage, sell_date, sold_mileage
+        FROM cars 
+        WHERE user_id = ? AND is_public_to_friends = 1
+        ORDER BY status DESC, year DESC, make, model
+    ''', (friend_id,)).fetchall()
+    
+    conn.close()
+    
+    if not friend_info:
+        abort(404)
+    
+    return render_template('friend_garage.html', friend=friend_info, cars=cars)
 
 @app.route('/toggle_car_visibility/<int:car_id>', methods=['POST'])
 @login_required
