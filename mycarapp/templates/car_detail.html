@@ -70,6 +70,19 @@
                         </svg>
                         Edit
                     </button>
+                    
+                    <!-- Privacy Toggle -->
+                    <div class="flex items-center gap-2 bg-gray-100 p-3 rounded-lg">
+                        <input type="checkbox" id="privacy-toggle" 
+                            {% if car.is_public_to_friends == 1 %}checked{% endif %}
+                            data-car-id="{{ car['id'] }}"
+                            onchange="togglePrivacy(this.dataset.carId)"
+                            class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                        <label for="privacy-toggle" class="text-sm font-medium text-gray-700 cursor-pointer">
+                            Public to Friends
+                        </label>
+                    </div>
+                    
                     {% if car['status'] == 'active' %}
                         <button onclick="openStatusModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow-lg hover:shadow-xl transform hover:scale-105">
                             Remove From Garage
@@ -1080,6 +1093,34 @@
             });
         });
     });
+
+    // Privacy toggle function
+    function togglePrivacy(carId) {
+        const checkbox = document.getElementById('privacy-toggle');
+        const isPublic = checkbox.checked;
+        
+        fetch(`/toggle_car_visibility/${carId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Privacy updated successfully');
+            } else {
+                console.error('Error updating privacy:', data.error);
+                // Revert the checkbox state if there was an error
+                checkbox.checked = !isPublic;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Revert the checkbox state if there was an error
+            checkbox.checked = !isPublic;
+        });
+    }
 </script>
 
 <style>

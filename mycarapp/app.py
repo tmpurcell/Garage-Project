@@ -4,6 +4,8 @@ import os
 import time
 import hashlib
 import secrets
+import string
+import random
 from functools import wraps
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -35,6 +37,15 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def generate_friend_code():
+    """Generate a unique friend code in format GRG-XXXXXX"""
+    while True:
+        # Generate 6 random alphanumeric characters
+        chars = string.ascii_uppercase + string.digits
+        random_part = ''.join(random.choices(chars, k=6))
+        friend_code = f"GRG-{random_part}"
+        return friend_code
 
 def compress_image(file_stream, max_size=(1200, 1200), quality=85):
     """
@@ -202,11 +213,53 @@ def migrate_db():
             c.execute('INSERT INTO schema_version (version) VALUES (2)')
             conn.commit()
 
+        if version < 3:
+            # Migration 3 - add friends feature tables and columns
+            migrations = [
+                "ALTER TABLE users ADD COLUMN friend_code TEXT",
+                "ALTER TABLE cars ADD COLUMN is_public_to_friends INTEGER DEFAULT 0",
+                '''CREATE TABLE IF NOT EXISTS friendships (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    requester_id INTEGER NOT NULL,
+                    addressee_id INTEGER NOT NULL,
+                    status TEXT DEFAULT 'active',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (requester_id) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (addressee_id) REFERENCES users(id) ON DELETE CASCADE
+                )'''
+            ]
+            for sql in migrations:
+                try:
+                    c.execute(sql)
+                except sqlite3.OperationalError:
+                    pass  # Column/table already exists
+            
+            # Generate friend codes for existing users
+            c.execute('SELECT id FROM users WHERE friend_code IS NULL')
+            existing_users = c.fetchall()
+            for user in existing_users:
+                friend_code = generate_friend_code()
+                try:
+                    c.execute('UPDATE users SET friend_code = ? WHERE id = ?', (friend_code, user[0]))
+                except sqlite3.IntegrityError:
+                    # Handle collision by generating a new code
+                    while True:
+                        friend_code = generate_friend_code()
+                        try:
+                            c.execute('UPDATE users SET friend_code = ? WHERE id = ?', (friend_code, user[0]))
+                            break
+                        except sqlite3.IntegrityError:
+                            continue
+            
+            c.execute('DELETE FROM schema_version')
+            c.execute('INSERT INTO schema_version (version) VALUES (3)')
+            conn.commit()
+
         # Add future migrations here:
-        # if version < 3:
+        # if version < 4:
         #     c.execute("ALTER TABLE cars ADD COLUMN color TEXT")
         #     c.execute('DELETE FROM schema_version')
-        #     c.execute('INSERT INTO schema_version (version) VALUES (3)')
+        #     c.execute('INSERT INTO schema_version (version) VALUES (4)')
         #     conn.commit()
 
 init_db()
@@ -285,8 +338,14 @@ def api_register():
     try:
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
         salt = secrets.token_hex(16)
-        conn.execute('INSERT INTO users (first_name, last_name, email, username, password_hash, salt) VALUES (?, ?, ?, ?, ?, ?)', 
-            (first_name, request.form.get('last_name', '').strip(), email, email, hashed_password, salt))
+        friend_code = generate_friend_code()
+        
+        # Ensure friend code is unique
+        while conn.execute('SELECT id FROM users WHERE friend_code = ?', (friend_code,)).fetchone():
+            friend_code = generate_friend_code()
+        
+        conn.execute('INSERT INTO users (first_name, last_name, email, username, password_hash, salt, friend_code) VALUES (?, ?, ?, ?, ?, ?, ?)', 
+            (first_name, request.form.get('last_name', '').strip(), email, email, hashed_password, salt, friend_code))
         conn.commit()
         
         new_user = conn.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone()
@@ -1182,6 +1241,174 @@ def delete_car(car_id):
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+# Friends feature routes
+@app.route('/friends')
+@login_required
+def friends():
+    conn = get_db_connection()
+    
+    # Get user's friend code
+    user = conn.execute('SELECT friend_code FROM users WHERE id = ?', (session['user_id'],)).fetchone()
+    
+    # Get user's friends
+    friends_list = conn.execute('''
+        SELECT u.id, u.first_name, u.last_name, u.email, u.friend_code, f.created_at
+        FROM users u
+        JOIN friendships f ON u.id = f.addressee_id
+        WHERE f.requester_id = ?
+        ORDER BY u.first_name, u.last_name
+    ''', (session['user_id'],)).fetchall()
+    
+    conn.close()
+    return render_template('friends.html', user=user, friends=friends_list)
+
+@app.route('/add_friend', methods=['POST'])
+@login_required
+def add_friend():
+    friend_code = request.form.get('friend_code', '').strip().upper()
+    
+    if not friend_code:
+        flash('Please enter a friend code', 'error')
+        return redirect(url_for('friends'))
+    
+    if not friend_code.startswith('GRG-') or len(friend_code) != 10:
+        flash('Invalid friend code format', 'error')
+        return redirect(url_for('friends'))
+    
+    conn = get_db_connection()
+    
+    # Find the user with this friend code
+    friend_user = conn.execute('SELECT id, first_name, last_name FROM users WHERE friend_code = ?', (friend_code,)).fetchone()
+    
+    if not friend_user:
+        conn.close()
+        flash('Friend code not found', 'error')
+        return redirect(url_for('friends'))
+    
+    if friend_user['id'] == session['user_id']:
+        conn.close()
+        flash('You cannot add yourself as a friend', 'error')
+        return redirect(url_for('friends'))
+    
+    # Check if already friends
+    existing_friendship = conn.execute('''
+        SELECT id FROM friendships 
+        WHERE requester_id = ? AND addressee_id = ?
+    ''', (session['user_id'], friend_user['id'])).fetchone()
+    
+    if existing_friendship:
+        conn.close()
+        flash('You are already friends with this person', 'error')
+        return redirect(url_for('friends'))
+    
+    # Add friendship
+    try:
+        conn.execute('''
+            INSERT INTO friendships (requester_id, addressee_id, status)
+            VALUES (?, ?, 'active')
+        ''', (session['user_id'], friend_user['id']))
+        conn.commit()
+        flash(f'You are now friends with {friend_user["first_name"]} {friend_user["last_name"]}!', 'success')
+    except sqlite3.Error as e:
+        conn.rollback()
+        flash('An error occurred while adding friend', 'error')
+    finally:
+        conn.close()
+    
+    return redirect(url_for('friends'))
+
+@app.route('/remove_friend/<int:friend_id>', methods=['POST'])
+@login_required
+def remove_friend(friend_id):
+    conn = get_db_connection()
+    
+    try:
+        conn.execute('''
+            DELETE FROM friendships 
+            WHERE requester_id = ? AND addressee_id = ?
+        ''', (session['user_id'], friend_id))
+        conn.commit()
+        flash('Friend removed successfully', 'success')
+    except sqlite3.Error as e:
+        conn.rollback()
+        flash('An error occurred while removing friend', 'error')
+    finally:
+        conn.close()
+    
+    return redirect(url_for('friends'))
+
+@app.route('/friends_garage')
+@login_required
+def friends_garage():
+    conn = get_db_connection()
+    conn.row_factory = sqlite3.Row
+    
+    # Get friends and their public cars
+    friends_cars = conn.execute('''
+        SELECT u.id as user_id, u.first_name, u.last_name, u.friend_code,
+               c.id as car_id, c.make, c.model, c.year, c.vehicle_type, c.image_path, c.miles, c.hours
+        FROM users u
+        JOIN friendships f ON u.id = f.addressee_id
+        LEFT JOIN cars c ON u.id = c.user_id AND c.status = 'active' AND c.is_public_to_friends = 1
+        WHERE f.requester_id = ?
+        ORDER BY u.first_name, u.last_name, c.make, c.model
+    ''', (session['user_id'],)).fetchall()
+    
+    # Group cars by friend
+    friends_data = {}
+    for row in friends_cars:
+        user_id = row['user_id']
+        if user_id not in friends_data:
+            friends_data[user_id] = {
+                'user': {
+                    'id': row['user_id'],
+                    'first_name': row['first_name'],
+                    'last_name': row['last_name'],
+                    'friend_code': row['friend_code']
+                },
+                'cars': []
+            }
+        
+        if row['car_id']:  # Only add if car exists
+            friends_data[user_id]['cars'].append({
+                'id': row['car_id'],
+                'make': row['make'],
+                'model': row['model'],
+                'year': row['year'],
+                'vehicle_type': row['vehicle_type'],
+                'image_path': row['image_path'],
+                'miles': row['miles'],
+                'hours': row['hours']
+            })
+    
+    conn.close()
+    return render_template('friends_garage.html', friends_data=friends_data)
+
+@app.route('/toggle_car_visibility/<int:car_id>', methods=['POST'])
+@login_required
+def toggle_car_visibility(car_id):
+    conn = get_db_connection()
+    
+    # Verify car belongs to user
+    car = conn.execute('SELECT is_public_to_friends FROM cars WHERE id = ? AND user_id = ?', 
+                     (car_id, session['user_id'])).fetchone()
+    
+    if not car:
+        conn.close()
+        return jsonify({'success': False, 'error': 'Car not found'})
+    
+    try:
+        new_visibility = 1 if car['is_public_to_friends'] == 0 else 0
+        conn.execute('UPDATE cars SET is_public_to_friends = ? WHERE id = ?', 
+                    (new_visibility, car_id))
+        conn.commit()
+        return jsonify({'success': True, 'is_public': new_visibility})
+    except sqlite3.Error as e:
+        conn.rollback()
+        return jsonify({'success': False, 'error': 'Database error'})
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     app.run(debug=True)
