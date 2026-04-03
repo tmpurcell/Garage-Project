@@ -48,7 +48,7 @@
                                 {% endif %}
                             {% else %}
                                 {% if car.miles %}
-                                    <p class="text-sm text-gray-700">Miles: {{ car.miles|int|comma }}</p>
+                                    <p class="text-sm text-gray-700">Miles: {{ "{:,}".format(car.miles|int) }}</p>
                                 {% endif %}
                             {% endif %}
                             
