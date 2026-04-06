@@ -117,101 +117,14 @@
                 </div>
                 {% endfor %}
             </div>
-
-            <div class="flex gap-2 mt-4 pt-3 border-t">
-                <button class="editBtn flex-1 bg-gray-600 text-white px-3 py-2 rounded text-sm" data-id="{{ car['id'] }}">Edit</button>
-                <button class="deleteBtn flex-1 bg-red-600 text-white px-3 py-2 rounded text-sm"
-                        data-id="{{ car['id'] }}"
-                        data-name='{{ (car["year"] ~ " " ~ car["make"] ~ " " ~ car["model"]) | tojson }}'>Delete</button>
-            </div>
         </div>
     </div>
     {% endfor %}
 </div>
 {% endif %}
 
-<div id="addCarModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div class="p-4 sm:p-6 border-b border-gray-200">
-            <div class="flex justify-between items-center">
-                <h2 class="text-xl font-bold text-gray-800">Add New Vehicle</h2>
-                <button onclick="document.getElementById('addCarModal').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-        </div>
-        <div class="flex-1 overflow-y-auto p-4 sm:p-6">
-            <form id="addCarForm" action="{{ url_for('add_car') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div><label class="block font-medium mb-1 text-sm">Make *</label><input type="text" name="make" class="border p-2 w-full rounded text-sm" required></div>
-                    <div><label class="block font-medium mb-1 text-sm">Model *</label><input type="text" name="model" class="border p-2 w-full rounded text-sm" required></div>
-                    <div><label class="block font-medium mb-1 text-sm">Year *</label><input type="number" name="year" class="border p-2 w-full rounded text-sm" required></div>
-                    <div><label class="block font-medium mb-1 text-sm">VIN (optional)</label><input type="text" name="vin" class="border p-2 w-full rounded text-sm"></div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block font-medium mb-1 text-sm">Vehicle Type *</label>
-                        <select name="vehicle_type" class="border p-2 w-full rounded text-sm" required>
-                            <option value="Car">Car</option>
-                            <option value="Truck">Truck</option>
-                            <option value="Motorcycle">Motorcycle</option>
-                            <option value="Boat">Boat</option>
-                            <option value="RV">RV</option>
-                        </select>
-                    </div>
-                    <div><label class="block font-medium mb-1 text-sm">Purchase Date</label><input type="date" name="purchase_date" class="border p-2 w-full rounded text-sm"></div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div><label class="block font-medium mb-1 text-sm">Miles When Purchased</label><input type="number" name="purchase_mileage" class="border p-2 w-full rounded text-sm" step="0.1"></div>
-                    <div><label class="block font-medium mb-1 text-sm">Current Miles</label><input type="number" name="miles" class="border p-2 w-full rounded text-sm" step="0.1"></div>
-                </div>
-                <div id="hours-fields" style="display:none;" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div><label class="block font-medium mb-1 text-sm">Hours When Purchased</label><input type="number" name="purchase_hours" class="border p-2 w-full rounded text-sm" step="0.1"></div>
-                    <div><label class="block font-medium mb-1 text-sm">Current Hours</label><input type="number" name="hours" class="border p-2 w-full rounded text-sm" step="0.1"></div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Vehicle Image (optional)</label>
-                    <div class="drag-drop-area" ondrop="handleDrop(event,'add_car_image')" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
-                        <svg class="w-6 h-6 mx-auto mb-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                        </svg>
-                        <p class="text-sm text-gray-600">Drag & drop or click to select</p>
-                        <input type="file" id="add_car_image" name="image" accept="image/*" capture="environment" class="mt-1 block w-full text-sm">
-                        <p class="text-xs text-gray-500 mt-1">Accepted formats: PNG, JPG, JPEG, GIF, WEBP (max 16MB)</p>
-                    </div>
-                </div>
-            </form>
-        </div>
-        <div class="border-t p-4 sm:p-6 bg-gray-50 flex gap-3">
-            <button type="submit" form="addCarForm" class="flex-1 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 text-sm">Add Vehicle</button>
-            <button type="button" onclick="closeAddCarModal()" class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 text-sm">Cancel</button>
-        </div>
-    </div>
-</div>
-<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div class="bg-white p-6 rounded">
-        <p>Delete <strong id="deleteCarName"></strong>?</p>
-        <form id="deleteForm" method="POST">
-            <button type="submit">Delete</button>
-            <button type="button" onclick="closeDeleteModal()">Cancel</button>
-        </form>
-    </div>
-</div>
-
 <script>
 function safe(id){return document.getElementById(id)}
-
-function closeAddCarModal() {
-    const modal = document.getElementById('addCarModal');
-    if (modal) modal.classList.add('hidden');
-}
-
-function closeDeleteModal() {
-    const modal = document.getElementById('deleteModal');
-    if (modal) modal.classList.add('hidden');
-}
 
 // Vehicle type toggle for hours/miles
 function toggleHoursField() {
@@ -253,44 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (vehicleSelect) {
         vehicleSelect.addEventListener('change', toggleHoursField);
     }
-
-    // Close modals when clicking outside
-    document.getElementById('addCarModal')?.addEventListener('click', (e) => {
-        if (e.target.id === 'addCarModal') {
-            e.stopPropagation();
-        }
-    });
-
-    document.getElementById('deleteModal')?.addEventListener('click', (e) => {
-        if (e.target.id === 'deleteModal') {
-            e.stopPropagation();
-        }
-    });
-
-    safe('addCarBtn')?.addEventListener('click', () => {
-        const m = safe('addCarModal');
-        if(!m) return;
-        m.classList.remove('hidden');
-    });
-
-    document.querySelectorAll('.editBtn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            window.location.href = '/car/' + btn.dataset.id;
-        });
-    });
-
-    document.querySelectorAll('.deleteBtn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const modal = safe('deleteModal');
-            const name = safe('deleteCarName');
-            const form = safe('deleteForm');
-            if(!modal || !name || !form) return;
-
-            name.textContent = btn.dataset.name;
-            form.action = '/delete_car/' + btn.dataset.id;
-            modal.classList.remove('hidden');
-        });
-    });
 
     document.querySelectorAll('[data-field]').forEach(cb => {
         cb.addEventListener('change', () => {
