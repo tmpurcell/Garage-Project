@@ -40,9 +40,9 @@
     .privacy-slider:before {
         position: absolute;
         content: "";
-        height: 16px;
-        width: 16px;
-        left: 4px;
+        height: 18px;
+        width: 18px;
+        left: 3px;
         bottom: 3px;
         background-color: white;
         transition: .4s;
@@ -54,190 +54,68 @@
     .privacy-toggle input:checked + .privacy-slider:before {
         transform: translateX(20px);
     }
-    .tab-button {
-        padding: 8px 16px;
-        margin: 0 4px 8px 0;
-        border: none;
-        background: #f3f4f6;
-        color: #6b7280;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    .tab-button:hover {
-        background: #e5e7eb;
-    }
-    .tab-button.active {
-        background: #3b82f6;
-        color: white;
-    }
-    .tab-content {
-        display: none;
-    }
-    .tab-content.active {
-        display: block;
-    }
 </style>
 
-<div class="mb-6">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">Manage My Vehicles</h1>
-        <button id="addCarBtn" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition flex items-center gap-2 shadow hover:shadow-xl transform hover:scale-105 text-sm">
-            Add New Vehicle
-        </button>
-    </div>
-</div>
-
-<!-- Vehicle Type Tabs -->
-<div class="mb-6 border-b">
-    <div class="flex space-x-1">
-        <button class="tab-button active" onclick="showTab('all')">All Vehicles</button>
-        <button class="tab-button" onclick="showTab('Car')">Cars</button>
-        <button class="tab-button" onclick="showTab('Truck')">Trucks</button>
-        <button class="tab-button" onclick="showTab('Motorcycle')">Motorcycles</button>
-        <button class="tab-button" onclick="showTab('Boat')">Boats</button>
-        <button class="tab-button" onclick="showTab('RV')">RVs</button>
-    </div>
-</div>
-
 {% if cars %}
-<!-- All Vehicles Tab -->
-<div id="all-tab" class="tab-content active">
-    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {% for car in cars %}
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow" data-vehicle-type="{{ car['vehicle_type'] }}">
-            <div class="h-48 bg-gray-200 relative">
-                {% if car['image_path'] %}
-                    <img src="{{ url_for('uploaded_file', user_id=session['user_id'], filename=car['image_path']) }}" 
-                        alt="{{ car['year'] }} {{ car['make'] }} {{ car['model'] }}"
-                        class="w-full h-full object-cover">
-                {% else %}
-                    <div class="w-full h-full flex items-center justify-center">
-                        <span class="text-gray-400">No image</span>
-                    </div>
-                {% endif %}
-                
-                {% if car['status'] == 'active' %}
-                    <span class="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">Active</span>
-                {% else %}
-                    <span class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ car['reason'] }}</span>
-                {% endif %}
-            </div>
-
-            <div class="p-4">
-                <h3 class="text-lg font-bold text-gray-800">{{ car['year'] }} {{ car['make'] }} {{ car['model'] }}</h3>
-
-                {% if car['vin'] %}
-                    <p class="text-sm text-gray-600 font-mono">VIN: {{ car['vin'] }}</p>
-                {% endif %}
-
-                <div class="space-y-3 mt-4">
-                    <h4 class="text-sm font-semibold text-gray-700">Privacy Settings</h4>
-
-                    {% set toggles = [
-                        ('public_to_friends','Show to Friends',car['is_public_to_friends']),
-                        ('public_vin','Show VIN',car['public_vin']),
-                        ('public_miles','Show Miles/Hours',car['public_miles']),
-                        ('public_purchase_info','Show Purchase Info',car['public_purchase_info'])
-                    ] %}
-
-                    {% for field,label,value in toggles %}
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm text-gray-600">{{ label }}</span>
-                        <label class="privacy-toggle">
-                            <input type="checkbox"
-                                data-car-id="{{ car['id'] }}"
-                                data-field="{{ field }}"
-                                {% if value %}checked{% endif %}>
-                            <span class="privacy-slider"></span>
-                        </label>
-                    </div>
-                    {% endfor %}
+<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+    {% for car in cars %}
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+        <div class="h-48 bg-gray-200 relative">
+            {% if car['image_path'] %}
+                <img src="{{ url_for('uploaded_file', user_id=session['user_id'], filename=car['image_path']) }}" 
+                    alt="{{ car['year'] }} {{ car['make'] }} {{ car['model'] }}"
+                    class="w-full h-full object-cover">
+            {% else %}
+                <div class="w-full h-full flex items-center justify-center">
+                    <span class="text-gray-400">No image</span>
                 </div>
+            {% endif %}
+            
+            {% if car['status'] == 'active' %}
+                <span class="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">Active</span>
+            {% else %}
+                <span class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ car['reason'] }}</span>
+            {% endif %}
+        </div>
 
-                <div class="flex gap-2 mt-4 pt-3 border-t">
-                    <button class="editBtn flex-1 bg-gray-600 text-white px-3 py-2 rounded text-sm" data-id="{{ car['id'] }}">Edit</button>
-                    <button class="deleteBtn flex-1 bg-red-600 text-white px-3 py-2 rounded text-sm"
-                            data-id="{{ car['id'] }}"
-                            data-name='{{ (car["year"] ~ " " ~ car["make"] ~ " " ~ car["model"]) | tojson }}'>Delete</button>
+        <div class="p-4">
+            <h3 class="text-lg font-bold text-gray-800">{{ car['year'] }} {{ car['make'] }} {{ car['model'] }}</h3>
+
+            {% if car['vin'] %}
+                <p class="text-sm text-gray-600 font-mono">VIN: {{ car['vin'] }}</p>
+            {% endif %}
+
+            <div class="space-y-3 mt-4">
+                <h4 class="text-sm font-semibold text-gray-700">Privacy Settings</h4>
+
+                {% set toggles = [
+                    ('public_to_friends','Show to Friends',car['is_public_to_friends']),
+                    ('public_vin','Show VIN',car['public_vin']),
+                    ('public_miles','Show Miles/Hours',car['public_miles']),
+                    ('public_purchase_info','Show Purchase Info',car['public_purchase_info'])
+                ] %}
+
+                {% for field,label,value in toggles %}
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">{{ label }}</span>
+                    <label class="privacy-toggle">
+                        <input type="checkbox"
+                            data-car-id="{{ car['id'] }}"
+                            data-field="{{ field }}"
+                            {% if value %}checked{% endif %}>
+                        <span class="privacy-slider"></span>
+                    </label>
                 </div>
+                {% endfor %}
             </div>
         </div>
-        {% endfor %}
     </div>
-</div>
-
-<!-- Individual Vehicle Type Tabs -->
-<div id="Car-tab" class="tab-content">
-    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        <!-- Cars will be filtered here by JavaScript -->
-    </div>
-</div>
-
-<div id="Truck-tab" class="tab-content">
-    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        <!-- Trucks will be filtered here by JavaScript -->
-    </div>
-</div>
-
-<div id="Motorcycle-tab" class="tab-content">
-    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        <!-- Motorcycles will be filtered here by JavaScript -->
-    </div>
-</div>
-
-<div id="Boat-tab" class="tab-content">
-    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        <!-- Boats will be filtered here by JavaScript -->
-    </div>
-</div>
-
-<div id="RV-tab" class="tab-content">
-    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        <!-- RVs will be filtered here by JavaScript -->
-    </div>
+    {% endfor %}
 </div>
 {% endif %}
 
 <script>
 function safe(id){return document.getElementById(id)}
-
-function showTab(tabName) {
-    // Hide all tabs
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    
-    // Remove active class from all buttons
-    document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    // Show selected tab
-    const selectedTab = document.getElementById(tabName + '-tab');
-    if (selectedTab) {
-        selectedTab.classList.add('active');
-    }
-    
-    // Add active class to clicked button
-    event.target.classList.add('active');
-    
-    // Filter cars based on selected tab
-    filterCars(tabName);
-}
-
-function filterCars(vehicleType) {
-    const allCars = document.querySelectorAll('[data-vehicle-type]');
-    
-    allCars.forEach(carElement => {
-        if (vehicleType === 'all') {
-            carElement.style.display = 'block';
-        } else {
-            const carVehicleType = carElement.dataset.vehicleType;
-            carElement.style.display = carVehicleType === vehicleType ? 'block' : 'none';
-        }
-    });
-}
 
 // Vehicle type toggle for hours/miles
 function toggleHoursField() {
