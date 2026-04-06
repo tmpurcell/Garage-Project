@@ -72,8 +72,8 @@
         <div class="h-48 bg-gray-200 relative">
             {% if car['image_path'] %}
                 <img src="{{ url_for('uploaded_file', user_id=session['user_id'], filename=car['image_path']) }}" 
-                     alt="{{ car['year'] }} {{ car['make'] }} {{ car['model'] }}"
-                     class="w-full h-full object-cover">
+                    alt="{{ car['year'] }} {{ car['make'] }} {{ car['model'] }}"
+                    class="w-full h-full object-cover">
             {% else %}
                 <div class="w-full h-full flex items-center justify-center">
                     <span class="text-gray-400">No image</span>
@@ -109,9 +109,9 @@
                     <span class="text-sm text-gray-600">{{ label }}</span>
                     <label class="privacy-toggle">
                         <input type="checkbox"
-                               data-car-id="{{ car['id'] }}"
-                               data-field="{{ field }}"
-                               {% if value %}checked{% endif %}>
+                            data-car-id="{{ car['id'] }}"
+                            data-field="{{ field }}"
+                            {% if value %}checked{% endif %}>
                         <span class="privacy-slider"></span>
                     </label>
                 </div>
@@ -190,6 +190,22 @@ document.addEventListener('DOMContentLoaded', () => {
             .finally(()=>cb.disabled=false);
         });
     });
+
+    // Simple file upload handling - let browser handle device detection
+    document.querySelectorAll('.drag-drop-area').forEach(z => {
+        z.addEventListener('click', () => {
+            const input = z.querySelector('input[type="file"]');
+            if (input) input.click();
+        });
+    });
+    
+    document.querySelectorAll('input[type="file"]').forEach(inp => inp.addEventListener('change', function() {
+        const z = this.closest('.drag-drop-area'); 
+        if (z && this.files[0]) { 
+            const p = z.querySelector('p'); 
+            if (p) p.textContent = `Selected: ${this.files[0].name}`; 
+        }
+    }));
 
 });
 </script>
