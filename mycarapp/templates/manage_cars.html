@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    .drag-drop-area {
+        border: 2px dashed #d1d5db;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        text-align: center;
+        transition: border-color 0.2s, background-color 0.2s;
+        cursor: pointer;
+    }
+    .drag-drop-area.drag-over {
+        border-color: #6b7280;
+        background-color: #f9fafb;
+    }
+    .privacy-toggle {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+    }
+    .privacy-toggle input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .privacy-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 24px;
+    }
+    .privacy-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+    .privacy-toggle input:checked + .privacy-slider {
+        background-color: #3b82f6;
+    }
+    .privacy-toggle input:checked + .privacy-slider:before {
+        transform: translateX(20px);
+    }
+</style>
+
+<div class="mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">Manage My Vehicles</h1>
+        <button id="addCarBtn" class="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition flex items-center gap-2 shadow hover:shadow-xl transform hover:scale-105 text-sm">
+            Add New Vehicle
+        </button>
+    </div>
+</div>
+
+{% if cars %}
+<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+    {% for car in cars %}
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+        <div class="h-48 bg-gray-200 relative">
+            {% if car['image_path'] %}
+                <img src="{{ url_for('uploaded_file', user_id=session['user_id'], filename=car['image_path']) }}" 
+                     alt="{{ car['year'] }} {{ car['make'] }} {{ car['model'] }}"
+                     class="w-full h-full object-cover">
+            {% else %}
+                <div class="w-full h-full flex items-center justify-center">
+                    <span class="text-gray-400">No image</span>
+                </div>
+            {% endif %}
+            
+            {% if car['status'] == 'active' %}
+                <span class="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">Active</span>
+            {% else %}
+                <span class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ car['reason'] }}</span>
+            {% endif %}
+        </div>
+
+        <div class="p-4">
+            <h3 class="text-lg font-bold text-gray-800">{{ car['year'] }} {{ car['make'] }} {{ car['model'] }}</h3>
+
+            {% if car['vin'] %}
+                <p class="text-sm text-gray-600 font-mono">VIN: {{ car['vin'] }}</p>
+            {% endif %}
+
+            <div class="space-y-3 mt-4">
+                <h4 class="text-sm font-semibold text-gray-700">Privacy Settings</h4>
+
+                {% set toggles = [
+                    ('public_to_friends','Show to Friends',car['is_public_to_friends']),
+                    ('public_vin','Show VIN',car['public_vin']),
+                    ('public_miles','Show Miles/Hours',car['public_miles']),
+                    ('public_purchase_info','Show Purchase Info',car['public_purchase_info'])
+                ] %}
+
+                {% for field,label,value in toggles %}
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-600">{{ label }}</span>
+                    <label class="privacy-toggle">
+                        <input type="checkbox"
+                               data-car-id="{{ car['id'] }}"
+                               data-field="{{ field }}"
+                               {% if value %}checked{% endif %}>
+                        <span class="privacy-slider"></span>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="flex gap-2 mt-4 pt-3 border-t">
+                <button class="editBtn flex-1 bg-gray-600 text-white px-3 py-2 rounded text-sm" data-id="{{ car['id'] }}">Edit</button>
+                <button class="deleteBtn flex-1 bg-red-600 text-white px-3 py-2 rounded text-sm"
+                        data-id="{{ car['id'] }}"
+                        data-name='{{ (car["year"] ~ " " ~ car["make"] ~ " " ~ car["model"]) | tojson }}'>Delete</button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div id="addCarModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"></div>
+<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded">
+        <p>Delete <strong id="deleteCarName"></strong>?</p>
+        <form id="deleteForm" method="POST">
+            <button type="submit">Delete</button>
+        </form>
+    </div>
+</div>
+
+<script>
+function safe(id){return document.getElementById(id)}
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    safe('addCarBtn')?.addEventListener('click', () => {
+        const m = safe('addCarModal');
+        if(!m) return;
+        m.classList.remove('hidden');
+    });
+
+    document.querySelectorAll('.editBtn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            window.location.href = '/car/' + btn.dataset.id;
+        });
+    });
+
+    document.querySelectorAll('.deleteBtn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const modal = safe('deleteModal');
+            const name = safe('deleteCarName');
+            const form = safe('deleteForm');
+            if(!modal || !name || !form) return;
+
+            name.textContent = btn.dataset.name;
+            form.action = '/delete_car/' + btn.dataset.id;
+            modal.classList.remove('hidden');
+        });
+    });
+
+    document.querySelectorAll('[data-field]').forEach(cb => {
+        cb.addEventListener('change', () => {
+            const val = cb.checked ? 1 : 0;
+            cb.disabled = true;
+
+            fetch('/update_car_privacy/' + cb.dataset.carId, {
+                method:'POST',
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body:JSON.stringify({field:cb.dataset.field,value:val})
+            })
+            .then(r=>r.json())
+            .then(d=>{
+                if(!d.success) cb.checked=!cb.checked;
+            })
+            .catch(()=>cb.checked=!cb.checked)
+            .finally(()=>cb.disabled=false);
+        });
+    });
+
+});
+</script>
+
+{% endblock %}

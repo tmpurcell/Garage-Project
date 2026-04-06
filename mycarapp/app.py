@@ -38,6 +38,13 @@ if not os.path.exists(UPLOAD_FOLDER):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def get_user_upload_folder(user_id):
+    """Get or create upload folder for a specific user"""
+    user_folder = os.path.join(UPLOAD_FOLDER, str(user_id))
+    if not os.path.exists(user_folder):
+        os.makedirs(user_folder)
+    return user_folder
+
 def generate_friend_code():
     """Generate a unique friend code in format GRG-XXXXXX"""
     while True:
@@ -213,20 +220,28 @@ def migrate_db():
             c.execute('INSERT INTO schema_version (version) VALUES (2)')
             conn.commit()
 
-        if version < 3:
+        if version < 4:
             # Migration 3 - add friends feature tables and columns
             migrations = [
                 "ALTER TABLE users ADD COLUMN friend_code TEXT",
                 "ALTER TABLE cars ADD COLUMN is_public_to_friends INTEGER DEFAULT 0",
+                "ALTER TABLE cars ADD COLUMN public_vin INTEGER DEFAULT 1",
+                "ALTER TABLE cars ADD COLUMN public_miles INTEGER DEFAULT 1",
+                "ALTER TABLE cars ADD COLUMN public_purchase_info INTEGER DEFAULT 1",
                 '''CREATE TABLE IF NOT EXISTS friendships (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     requester_id INTEGER NOT NULL,
                     addressee_id INTEGER NOT NULL,
-                    status TEXT DEFAULT 'active',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (requester_id) REFERENCES users(id) ON DELETE CASCADE,
-                    FOREIGN KEY (addressee_id) REFERENCES users(id) ON DELETE CASCADE
-                )'''
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )''',
+                "ALTER TABLE cars ADD COLUMN status TEXT DEFAULT 'active'",
+                "ALTER TABLE cars ADD COLUMN reason TEXT",
+                "ALTER TABLE cars ADD COLUMN sell_date TEXT",
+                "ALTER TABLE cars ADD COLUMN sold_mileage REAL",
+                "ALTER TABLE cars ADD COLUMN purchase_date TEXT",
+                "ALTER TABLE cars ADD COLUMN purchase_mileage REAL",
+                "ALTER TABLE cars ADD COLUMN purchase_hours REAL",
+                "ALTER TABLE cars ADD COLUMN hours REAL",
             ]
             for sql in migrations:
                 try:
@@ -257,10 +272,11 @@ def migrate_db():
 
         # Add future migrations here:
         # if version < 4:
-        #     c.execute("ALTER TABLE cars ADD COLUMN color TEXT")
-        #     c.execute('DELETE FROM schema_version')
-        #     c.execute('INSERT INTO schema_version (version) VALUES (4)')
-        #     conn.commit()
+        # Example future migration:
+            # c.execute("ALTER TABLE cars ADD COLUMN color TEXT")
+        # c.execute('DELETE FROM schema_version')
+        # c.execute('INSERT INTO schema_version (version) VALUES (4)')
+        # conn.commit()
 
 init_db()
 migrate_db()
@@ -565,6 +581,26 @@ def profile():
     
     return render_template('profile.html', user=user)
 
+@app.route("/manage_cars")
+@login_required
+def manage_cars():
+    """Comprehensive car management page with privacy controls"""
+    conn = get_db_connection()
+    conn.row_factory = sqlite3.Row
+    
+    # Get all user's cars with privacy settings
+    cars = conn.execute('''
+        SELECT id, make, model, year, vehicle_type, image_path, miles, hours, vin, 
+               status, reason, purchase_date, purchase_mileage, purchase_hours,
+               is_public_to_friends, public_vin, public_miles, public_purchase_info
+        FROM cars 
+        WHERE user_id = ?
+        ORDER BY year DESC, make, model
+    ''', (session['user_id'],)).fetchall()
+    
+    conn.close()
+    return render_template('manage_cars.html', cars=cars)
+
 @app.route("/cars")
 @login_required
 def cars():
@@ -679,7 +715,8 @@ def add_car():
             if file.filename != '' and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 filename = f"{int(time.time())}_{filename}"
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                user_folder = get_user_upload_folder(session['user_id'])
+                file_path = os.path.join(user_folder, filename)
                 
                 # Compress image if it's an image file (not PDF)
                 if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
@@ -798,7 +835,8 @@ def edit_car(car_id):
             abort(404)
         
         image_path = car['image_path']
-        if 'image' in request.files:
+        # Handle image upload
+        if 'image' in request.files and request.files['image'].filename != '':
             file = request.files['image']
             if file.filename != '':
                 if allowed_file(file.filename):
@@ -807,14 +845,16 @@ def edit_car(car_id):
                         filename = car['image_path']
                         # Remove old file to ensure clean overwrite
                         try:
-                            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                            old_folder = get_user_upload_folder(session['user_id'])
+                            os.remove(os.path.join(old_folder, filename))
                         except OSError:
                             pass
                     else:
                         filename = secure_filename(file.filename)
                         filename = f"{int(time.time())}_{filename}"
                     
-                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    user_folder = get_user_upload_folder(session['user_id'])
+                    file_path = os.path.join(user_folder, filename)
                     
                     # Compress image if it's an image file (not PDF)
                     if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
@@ -918,7 +958,8 @@ def add_maintenance(car_id):
         if file.filename != '' and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             filename = f"{int(time.time())}_{filename}"
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            user_folder = get_user_upload_folder(session['user_id'])
+            file_path = os.path.join(user_folder, filename)
             
             # Compress image if it's an image file (not PDF)
             if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
@@ -965,14 +1006,16 @@ def edit_maintenance(car_id, record_id):
                     filename = current[0]
                     # Remove old file to ensure clean overwrite
                     try:
-                        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                        old_folder = get_user_upload_folder(session['user_id'])
+                        os.remove(os.path.join(old_folder, filename))
                     except OSError:
                         pass
                 else:
                     filename = secure_filename(file.filename)
                     filename = f"{int(time.time())}_{filename}"
                 
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                user_folder = get_user_upload_folder(session['user_id'])
+                file_path = os.path.join(user_folder, filename)
                 
                 # Compress image if it's an image file (not PDF)
                 if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
@@ -1034,7 +1077,8 @@ def add_part(car_id):
         if file.filename != '' and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             filename = f"{int(time.time())}_{filename}"
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            user_folder = get_user_upload_folder(session['user_id'])
+            file_path = os.path.join(user_folder, filename)
             
             # Compress image if it's an image file (not PDF)
             if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
@@ -1079,14 +1123,16 @@ def edit_part(car_id, part_id):
                     filename = current_part[0]
                     # Remove old file to ensure clean overwrite
                     try:
-                        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                        old_folder = get_user_upload_folder(session['user_id'])
+                        os.remove(os.path.join(old_folder, filename))
                     except OSError:
                         pass
                 else:
                     filename = secure_filename(file.filename)
                     filename = f"{int(time.time())}_{filename}"
                 
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                user_folder = get_user_upload_folder(session['user_id'])
+                file_path = os.path.join(user_folder, filename)
                 
                 # Compress image if it's an image file (not PDF)
                 if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
@@ -1238,9 +1284,52 @@ def delete_car(car_id):
     flash(f'{car["year"]} {car["make"]} {car["model"]} has been deleted', 'success')
     return redirect(url_for('cars'))
 
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+@app.route('/update_car_privacy/<int:car_id>', methods=['POST'])
+@login_required
+def update_car_privacy(car_id):
+    """Update privacy settings for a specific car field"""
+    conn = get_db_connection()
+    
+    # Verify car ownership
+    car = conn.execute('SELECT user_id FROM cars WHERE id = ?', (car_id,)).fetchone()
+    if not car or car['user_id'] != session['user_id']:
+        conn.close()
+        return jsonify({'success': False, 'error': 'Unauthorized'})
+    
+    try:
+        data = request.get_json()
+        field = data.get('field')
+        value = data.get('value')
+        
+        # Validate field
+        valid_fields = ['public_to_friends', 'public_vin', 'public_miles', 'public_purchase_info']
+        if field not in valid_fields:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Invalid field'})
+        
+        # Update the specific field
+        if field == 'public_to_friends':
+            conn.execute('UPDATE cars SET is_public_to_friends = ? WHERE id = ?', (value, car_id))
+        elif field == 'public_vin':
+            conn.execute('UPDATE cars SET public_vin = ? WHERE id = ?', (value, car_id))
+        elif field == 'public_miles':
+            conn.execute('UPDATE cars SET public_miles = ? WHERE id = ?', (value, car_id))
+        elif field == 'public_purchase_info':
+            conn.execute('UPDATE cars SET public_purchase_info = ? WHERE id = ?', (value, car_id))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        conn.close()
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/uploads/<int:user_id>/<filename>')
+def uploaded_file(user_id, filename):
+    """Serve files from user-specific folders"""
+    user_folder = get_user_upload_folder(user_id)
+    return send_from_directory(user_folder, filename)
 
 # Friends feature routes
 @app.route('/friends')

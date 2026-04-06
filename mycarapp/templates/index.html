@@ -232,7 +232,7 @@
                 <a href="{{ url_for('car_detail', car_id=car.id) }}" class="carousel-card block no-underline text-inherit" style="text-decoration:none; color:inherit;">
                     <div class="relative">
                         {% if car.image_path %}
-                        <img src="{{ url_for('uploaded_file', filename=car.image_path) }}"
+                        <img src="{{ url_for('uploaded_file', user_id=session['user_id'], filename=car.image_path) }}"
                             alt="{{ car.year }} {{ car.make }} {{ car.model }}">
                         {% else %}
                         <div class="no-image">
@@ -315,7 +315,7 @@
                         {% for car in all_cars %}
                         <a href="{{ url_for('car_detail', car_id=car.id) }}" class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded" style="text-decoration:none;color:inherit;">
                             {% if car.image_path %}
-                            <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" class="w-10 h-10 object-cover rounded">
+                            <img src="{{ url_for('uploaded_file', user_id=session['user_id'], filename=car.image_path) }}" class="w-10 h-10 object-cover rounded">
                             {% else %}
                             <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center"><i class="fas fa-car text-gray-400 text-sm"></i></div>
                             {% endif %}
@@ -345,7 +345,7 @@
                         {% for car in active_list %}
                         <a href="{{ url_for('car_detail', car_id=car.id) }}" class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded" style="text-decoration:none;color:inherit;">
                             {% if car.image_path %}
-                            <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" class="w-10 h-10 object-cover rounded">
+                            <img src="{{ url_for('uploaded_file', user_id=session['user_id'], filename=car.image_path) }}" class="w-10 h-10 object-cover rounded">
                             {% else %}
                             <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center"><i class="fas fa-car text-gray-400 text-sm"></i></div>
                             {% endif %}
@@ -375,7 +375,7 @@
                         {% for car in past_list %}
                         <a href="{{ url_for('car_detail', car_id=car.id) }}" class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded" style="text-decoration:none;color:inherit;">
                             {% if car.image_path %}
-                            <img src="{{ url_for('uploaded_file', filename=car.image_path) }}" class="w-10 h-10 object-cover rounded">
+                            <img src="{{ url_for('uploaded_file', user_id=session['user_id'], filename=car.image_path) }}" class="w-10 h-10 object-cover rounded">
                             {% else %}
                             <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center"><i class="fas fa-car text-gray-400 text-sm"></i></div>
                             {% endif %}
