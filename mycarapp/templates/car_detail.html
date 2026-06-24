@@ -661,19 +661,6 @@
         if (file) { const inp = document.getElementById(id); const dt = new DataTransfer(); dt.items.add(file); inp.files = dt.files; const p = e.currentTarget.querySelector('p'); if (p) p.textContent = `Selected: ${file.name}`; }
     }
     document.addEventListener('DOMContentLoaded', () => {
-        // Simple file upload handling - let browser handle device detection
-        document.querySelectorAll('.drag-drop-area').forEach(z => {
-            z.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const input = z.querySelector('input[type="file"]');
-                if (input) {
-                    input.focus();
-                    input.click();
-                }
-            });
-        });
-        
         document.querySelectorAll('input[type="file"]').forEach(inp => inp.addEventListener('change', function() {
             const z = this.closest('.drag-drop-area'); 
             if (z && this.files[0]) { 
