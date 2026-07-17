@@ -548,14 +548,11 @@ def profile():
                 flash('New passwords do not match', 'error')
                 return redirect(url_for('profile'))
             
-            salt = user['salt']
-            hashed_current = hashlib.pbkdf2_hmac('sha256', current_password.encode('utf-8'), salt.encode('utf-8'), 100000).hex()
-            
-            if hashed_current != user['password_hash']:
+            if not check_password_hash(user['password_hash'], current_password):
                 flash('Current password is incorrect', 'error')
                 return redirect(url_for('profile'))
             
-            new_hashed_password = hashlib.pbkdf2_hmac('sha256', new_password.encode('utf-8'), salt.encode('utf-8'), 100000).hex()
+            new_hashed_password = generate_password_hash(new_password, method='pbkdf2:sha256')
             conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hashed_password, session['user_id']))
         
         try:
