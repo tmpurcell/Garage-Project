@@ -270,13 +270,25 @@ def migrate_db():
             c.execute('INSERT INTO schema_version (version) VALUES (3)')
             conn.commit()
 
-        # Add future migrations here:
-        # if version < 4:
-        # Example future migration:
-            # c.execute("ALTER TABLE cars ADD COLUMN color TEXT")
-        # c.execute('DELETE FROM schema_version')
-        # c.execute('INSERT INTO schema_version (version) VALUES (4)')
-        # conn.commit()
+        if version < 4:
+            # Migration 4 - add car_photos table for gallery feature
+            migrations = [
+                '''CREATE TABLE IF NOT EXISTS car_photos (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    car_id INTEGER NOT NULL,
+                    image_path TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (car_id) REFERENCES cars (id) ON DELETE CASCADE
+                )''',
+            ]
+            for sql in migrations:
+                try:
+                    c.execute(sql)
+                except sqlite3.OperationalError:
+                    pass  # Table already exists
+            c.execute('DELETE FROM schema_version')
+            c.execute('INSERT INTO schema_version (version) VALUES (4)')
+            conn.commit()
 
 init_db()
 migrate_db()
@@ -764,9 +776,10 @@ def car_detail(car_id):
     maintenance = conn.execute('SELECT * FROM maintenance_records WHERE car_id = ? ORDER BY date DESC', (car_id,)).fetchall()
     parts = conn.execute('SELECT * FROM aftermarket_parts WHERE car_id = ? ORDER BY install_date DESC', (car_id,)).fetchall()
     scheduled = conn.execute('SELECT * FROM scheduled_maintenance WHERE car_id = ? ORDER BY due_date ASC', (car_id,)).fetchall()
+    photos = conn.execute('SELECT * FROM car_photos WHERE car_id = ? ORDER BY created_at ASC', (car_id,)).fetchall()
     
     conn.close()
-    return render_template("car_detail.html", car=car, maintenance=maintenance, parts=parts, scheduled=scheduled)
+    return render_template("car_detail.html", car=car, maintenance=maintenance, parts=parts, scheduled=scheduled, photos=photos)
 
 @app.route("/car/<int:car_id>/edit", methods=["GET", "POST"])
 @login_required
@@ -1433,7 +1446,8 @@ def friends_garage():
     # Get friends and their cars (only active shared cars)
     friends_cars = conn.execute('''
         SELECT u.id as user_id, u.first_name, u.last_name, u.friend_code,
-               c.id as car_id, c.make, c.model, c.year, c.vehicle_type, c.image_path, c.miles, c.hours, c.status, c.reason
+               c.id as car_id, c.make, c.model, c.year, c.vehicle_type, c.image_path, c.miles, c.hours, c.status, c.reason,
+               c.vin, c.purchase_date, c.purchase_mileage, c.purchase_hours, c.public_vin, c.public_miles, c.public_purchase_info
         FROM users u
         JOIN friendships f ON u.id = f.addressee_id
         LEFT JOIN cars c ON u.id = c.user_id AND c.is_public_to_friends = 1 AND c.status = 'active'
@@ -1467,7 +1481,14 @@ def friends_garage():
                 'miles': row['miles'],
                 'hours': row['hours'],
                 'status': row['status'],
-                'reason': row['reason']
+                'reason': row['reason'],
+                'vin': row['vin'],
+                'purchase_date': row['purchase_date'],
+                'purchase_mileage': row['purchase_mileage'],
+                'purchase_hours': row['purchase_hours'],
+                'public_vin': row['public_vin'],
+                'public_miles': row['public_miles'],
+                'public_purchase_info': row['public_purchase_info']
             })
     
     conn.close()
@@ -1496,7 +1517,8 @@ def friend_garage(friend_id):
     
     cars = conn.execute('''
         SELECT id, make, model, year, vehicle_type, image_path, miles, hours, status, reason,
-               purchase_date, purchase_mileage, sell_date, sold_mileage
+               purchase_date, purchase_mileage, sell_date, sold_mileage, vin, purchase_hours,
+               public_vin, public_miles, public_purchase_info
         FROM cars 
         WHERE user_id = ? AND is_public_to_friends = 1 AND status = 'active'
         ORDER BY year DESC, make, model
@@ -1533,6 +1555,112 @@ def toggle_car_visibility(car_id):
         return jsonify({'success': False, 'error': 'Database error'})
     finally:
         conn.close()
+
+@app.route('/car/<int:car_id>/upload_photo', methods=['POST'])
+@login_required
+def upload_car_photo(car_id):
+    """Upload a photo to car gallery with compression and override logic"""
+    conn = get_db_connection()
+    
+    # Verify car ownership
+    car = conn.execute('SELECT user_id FROM cars WHERE id = ?', (car_id,)).fetchone()
+    if not car or car['user_id'] != session['user_id']:
+        conn.close()
+        return jsonify({'success': False, 'error': 'Unauthorized'})
+    
+    # Check current photo count
+    current_photos = conn.execute('SELECT COUNT(*) as count FROM car_photos WHERE car_id = ?', (car_id,)).fetchone()
+    
+    if current_photos['count'] >= 10:
+        conn.close()
+        return jsonify({'success': False, 'error': 'Maximum 10 photos allowed. Please delete a photo first.'})
+    
+    if 'photo' not in request.files:
+        conn.close()
+        return jsonify({'success': False, 'error': 'No photo provided'})
+    
+    file = request.files['photo']
+    if file.filename == '':
+        conn.close()
+        return jsonify({'success': False, 'error': 'No photo selected'})
+    
+    if not allowed_file(file.filename):
+        conn.close()
+        return jsonify({'success': False, 'error': 'Invalid file type. Only images allowed.'})
+    
+    # Check if user wants to override an existing photo
+    override_photo_id = request.form.get('override_photo_id')
+    
+    try:
+        filename = secure_filename(file.filename)
+        filename = f"gallery_{int(time.time())}_{filename}"
+        user_folder = get_user_upload_folder(session['user_id'])
+        file_path = os.path.join(user_folder, filename)
+        
+        # Compress image
+        compressed_data = compress_image(file.stream)
+        with open(file_path, 'wb') as f:
+            f.write(compressed_data)
+        
+        if override_photo_id:
+            # Delete the old photo
+            old_photo = conn.execute('SELECT image_path FROM car_photos WHERE id = ? AND car_id = ?', 
+                                    (override_photo_id, car_id)).fetchone()
+            if old_photo:
+                old_file_path = os.path.join(user_folder, old_photo['image_path'])
+                if os.path.exists(old_file_path):
+                    os.remove(old_file_path)
+                conn.execute('DELETE FROM car_photos WHERE id = ?', (override_photo_id,))
+        
+        # Add new photo
+        conn.execute('INSERT INTO car_photos (car_id, image_path) VALUES (?, ?)', (car_id, filename))
+        conn.commit()
+        
+        conn.close()
+        return jsonify({'success': True, 'message': 'Photo uploaded successfully'})
+        
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return jsonify({'success': False, 'error': f'Error uploading photo: {str(e)}'})
+
+@app.route('/car/<int:car_id>/delete_photo/<int:photo_id>', methods=['POST'])
+@login_required
+def delete_car_photo(car_id, photo_id):
+    """Delete a photo from car gallery"""
+    conn = get_db_connection()
+    
+    # Verify car ownership
+    car = conn.execute('SELECT user_id FROM cars WHERE id = ?', (car_id,)).fetchone()
+    if not car or car['user_id'] != session['user_id']:
+        conn.close()
+        return jsonify({'success': False, 'error': 'Unauthorized'})
+    
+    try:
+        photo = conn.execute('SELECT image_path FROM car_photos WHERE id = ? AND car_id = ?', 
+                            (photo_id, car_id)).fetchone()
+        
+        if not photo:
+            conn.close()
+            return jsonify({'success': False, 'error': 'Photo not found'})
+        
+        # Delete file from disk
+        user_folder = get_user_upload_folder(session['user_id'])
+        file_path = os.path.join(user_folder, photo['image_path'])
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        
+        # Delete from database
+        conn.execute('DELETE FROM car_photos WHERE id = ?', (photo_id,))
+        conn.commit()
+        
+        conn.close()
+        return jsonify({'success': True, 'message': 'Photo deleted successfully'})
+        
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return jsonify({'success': False, 'error': f'Error deleting photo: {str(e)}'})
 
 if __name__ == "__main__":
     app.run(debug=True)

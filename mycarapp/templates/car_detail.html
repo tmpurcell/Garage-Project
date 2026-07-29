@@ -270,6 +270,7 @@
     <nav class="-mb-px flex space-x-4 sm:space-x-8 min-w-max">
         <button onclick="showTab('maintenance')" id="tab-maintenance" class="tab-button border-b-2 border-gray-700 py-3 px-1 text-gray-700 font-medium text-sm sm:text-base whitespace-nowrap">Maintenance</button>
         <button onclick="showTab('parts')" id="tab-parts" class="tab-button border-b-2 border-transparent py-3 px-1 text-gray-500 hover:text-gray-700 font-medium text-sm sm:text-base whitespace-nowrap">Aftermarket Parts</button>
+        <button onclick="showTab('gallery')" id="tab-gallery" class="tab-button border-b-2 border-transparent py-3 px-1 text-gray-500 hover:text-gray-700 font-medium text-sm sm:text-base whitespace-nowrap">Gallery</button>
         <button onclick="showTab('scheduled')" id="tab-scheduled" class="tab-button border-b-2 border-transparent py-3 px-1 text-gray-500 hover:text-gray-700 font-medium text-sm sm:text-base whitespace-nowrap">Scheduled</button>
     </nav>
 </div>
@@ -365,6 +366,73 @@
     {% else %}
     <p class="text-gray-600 text-center py-8 text-sm">No aftermarket parts yet.</p>
     {% endif %}
+</div>
+
+<!-- ── Gallery Tab ─────────────────────────────────────────────── -->
+<div id="content-gallery" class="tab-content hidden">
+    <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold">Photo Gallery ({{ photos|length }}/10)</h3>
+        <button onclick="openPhotoUploadModal()" class="bg-gray-700 text-white px-3 py-2 rounded-lg hover:bg-gray-800 flex items-center gap-1 text-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Add Photo
+        </button>
+    </div>
+    {% if photos %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {% for photo in photos %}
+        <div class="relative group">
+            <img src="{{ url_for('uploaded_file', user_id=session['user_id'], filename=photo[2]) }}" 
+                alt="Car photo"
+                class="w-full h-32 object-cover rounded-lg shadow">
+            <button onclick="deletePhoto({{ photo[0] }})" 
+                    class="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-gray-600 text-center py-8 text-sm">No photos yet. Click "Add Photo" to start building your gallery.</p>
+    {% endif %}
+</div>
+
+<!-- ── Photo Upload Modal ─────────────────────────────────────── -->
+<div id="photoUploadModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div class="p-4 sm:p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Add Photo to Gallery</h2>
+                <button onclick="closePhotoUploadModal()" class="text-gray-500 hover:text-gray-700"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <form id="photoUploadForm" class="space-y-4">
+                <div>
+                    <label class="block font-medium mb-1 text-sm">Photo *</label>
+                    <input type="file" id="gallery_photo" name="photo" accept="image/*" class="border p-2 w-full rounded text-sm" required>
+                </div>
+                {% if photos|length >= 10 %}
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p class="text-sm text-yellow-800 mb-2">Gallery is full (10/10). Select a photo to replace:</p>
+                    <div class="grid grid-cols-5 gap-2">
+                        {% for photo in photos %}
+                        <label class="cursor-pointer">
+                            <input type="radio" name="override_photo_id" value="{{ photo[0] }}" class="sr-only peer">
+                            <img src="{{ url_for('uploaded_file', user_id=session['user_id'], filename=photo[2]) }}" 
+                                 alt="Photo {{ loop.index }}"
+                                 class="w-full h-16 object-cover rounded border-2 border-transparent peer-checked:border-red-500 peer-checked:opacity-50">
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" class="flex-1 bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 text-sm">Upload Photo</button>
+                    <button type="button" onclick="closePhotoUploadModal()" class="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 text-sm">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <!-- ── Add Part Modal ─────────────────────────────────────────── -->
@@ -669,6 +737,51 @@
             }
         }));
     });
+
+    function openPhotoUploadModal() { document.getElementById('photoUploadModal').classList.remove('hidden'); }
+    function closePhotoUploadModal() { document.getElementById('photoUploadModal').classList.add('hidden'); document.getElementById('photoUploadForm').reset(); }
+    document.getElementById('photoUploadModal')?.addEventListener('click', e => { if(e.target===document.getElementById('photoUploadModal')) closePhotoUploadModal(); });
+
+    document.getElementById('photoUploadForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        formData.append('car_id', {{ car['id'] }});
+        
+        fetch(`/car/{{ car['id'] }}/upload_photo`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Error uploading photo');
+            }
+        })
+        .catch(error => {
+            alert('Error uploading photo: ' + error);
+        });
+    });
+
+    function deletePhoto(photoId) {
+        if (!confirm('Are you sure you want to delete this photo?')) return;
+        
+        fetch(`/car/{{ car['id'] }}/delete_photo/${photoId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || 'Error deleting photo');
+            }
+        })
+        .catch(error => {
+            alert('Error deleting photo: ' + error);
+        });
+    }
 
     function togglePrivacy(carId) {
         const cb = document.getElementById('privacy-toggle'), isPublic = cb.checked;

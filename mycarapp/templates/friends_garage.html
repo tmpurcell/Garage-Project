@@ -53,11 +53,11 @@
                             <p class="text-sm text-gray-600 mb-2">{{ car.vehicle_type }}</p>
                             
                             {% if car.vehicle_type == 'Boat' %}
-                                {% if car.hours %}
+                                {% if car.hours and car.public_miles == 1 %}
                                     <p class="text-sm text-gray-700">Hours: {{ car.hours }}</p>
                                 {% endif %}
                             {% else %}
-                                {% if car.miles %}
+                                {% if car.miles and car.public_miles == 1 %}
                                     <p class="text-sm text-gray-700">Miles: {{ "{:,}".format(car.miles|int) }}</p>
                                 {% endif %}
                             {% endif %}

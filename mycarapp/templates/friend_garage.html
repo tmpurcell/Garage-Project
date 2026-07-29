@@ -53,18 +53,23 @@
                     <p class="text-sm text-gray-600 mb-2">{{ car.vehicle_type }}</p>
                     
                     {% if car.vehicle_type == 'Boat' %}
-                        {% if car.hours %}
+                        {% if car.hours and car.public_miles == 1 %}
                             <p class="text-sm text-gray-700">Hours: {{ car.hours }}</p>
                         {% endif %}
                     {% else %}
-                        {% if car.miles %}
+                        {% if car.miles and car.public_miles == 1 %}
                             <p class="text-sm text-gray-700">Miles: {{ "{:,}".format(car.miles|int) }}</p>
                         {% endif %}
                     {% endif %}
                     
+                    <!-- VIN -->
+                    {% if car.vin and car.public_vin == 1 %}
+                        <p class="text-xs text-gray-500 font-mono">VIN: {{ car.vin }}</p>
+                    {% endif %}
+                    
                     <!-- Purchase/Sale Info -->
-                    {% if car.purchase_date %}
-                        <p class="text-xs text-gray-500">Purchased: {{ car.purchase_date }}</p>
+                    {% if car.purchase_date and car.public_purchase_info == 1 %}
+                        <p class="text-xs text-gray-500">Purchased: {{ car.purchase_date[5:7] }}/{{ car.purchase_date[8:10] }}/{{ car.purchase_date[0:4] }}</p>
                     {% endif %}
                     
                     {% if car.sell_date %}
