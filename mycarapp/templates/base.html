@@ -28,6 +28,22 @@
                 background-color: rgba(31, 41, 55, 0.95);
             }
 
+            /* Skip to content link */
+            .skip-to-content {
+                position: absolute;
+                top: -40px;
+                left: 0;
+                background: #1f2937;
+                color: white;
+                padding: 8px 16px;
+                z-index: 100;
+                transition: top 0.3s;
+                text-decoration: none;
+            }
+            .skip-to-content:focus {
+                top: 0;
+            }
+
             /* Drag and Drop Styles */
             .drag-drop-area {
                 border: 2px dashed #cbd5e1;
@@ -94,9 +110,20 @@
                 background: #374151;
                 color: white;
             }
+
+            /* Focus indicators */
+            button:focus-visible,
+            a:focus-visible,
+            input:focus-visible,
+            select:focus-visible,
+            textarea:focus-visible {
+                outline: 3px solid #3b82f6;
+                outline-offset: 2px;
+            }
         </style>
     </head>
     <body class="bg-gray-300 text-gray-800 min-h-screen font-sans flex flex-col h-full">
+        <a href="#main-content" class="skip-to-content">Skip to main content</a>
         <header class="bg-gray-800 text-white p-4 shadow-md sticky top-0 z-50">
 
             <!-- ── DESKTOP nav (hidden on mobile) ─────────────────── -->
@@ -125,7 +152,7 @@
                     {% if 'user_id' in session %}
                         <span class="text-gray-300 mr-4 text-sm">Welcome, {{ session.get('first_name', 'User') }}</span>
                     {% endif %}
-                    <button id="menuButton" class="p-2 -m-2 rounded-md hover:bg-gray-700 focus:outline-none transition-colors">
+                    <button id="menuButton" class="p-2 -m-2 rounded-md hover:bg-gray-700 focus:outline-none transition-colors" aria-label="Open menu">
                         <i class="fas fa-bars text-white"></i>
                     </button>
                 </div>
@@ -134,26 +161,26 @@
             <!-- ── MOBILE nav (hidden on desktop) ─────────────────── -->
             <div class="flex md:hidden items-center justify-between relative">
                 <!-- Left - hamburger -->
-                <button id="menuButtonMobile" class="p-2 rounded-md hover:bg-gray-700 focus:outline-none transition-colors">
+                <button id="menuButtonMobile" class="p-2 rounded-md hover:bg-gray-700 focus:outline-none transition-colors" aria-label="Open menu">
                     <i class="fas fa-bars text-white text-xl"></i>
                 </button>
 
                 <!-- Center - My Garage dropdown trigger -->
                 <div class="relative">
-                    <button id="mobileNavToggle" class="flex items-center gap-2 text-xl font-bold text-white hover:text-gray-300 transition-colors focus:outline-none">
+                    <button id="mobileNavToggle" class="flex items-center gap-2 text-xl font-bold text-white hover:text-gray-300 transition-colors focus:outline-none" aria-expanded="false" aria-haspopup="true" aria-controls="mobileDropdown">
                         My Garage
-                        <i class="fas fa-chevron-down text-sm transition-transform" id="mobileNavChevron"></i>
+                        <i class="fas fa-chevron-down text-sm transition-transform" id="mobileNavChevron" aria-hidden="true"></i>
                     </button>
 
                     <!-- Dropdown -->
-                    <div id="mobileDropdown" class="mobile-dropdown">
+                    <div id="mobileDropdown" class="mobile-dropdown" role="menu" aria-label="Navigation menu">
                         {% if 'user_id' not in session %}
-                            <a href="{{ url_for('landing') }}">Start Your Garage</a>
+                            <a href="{{ url_for('landing') }}" role="menuitem"><i class="fas fa-home mr-2" aria-hidden="true"></i>Start Your Garage</a>
                         {% else %}
-                            <a href="{{ url_for('home') }}"><i class="fas fa-home mr-2"></i>My Home</a>
-                            <a href="{{ url_for('cars') }}"><i class="fas fa-car mr-2"></i>My Cars</a>
-                            <a href="{{ url_for('adv_garage') }}"><i class="fas fa-chart-bar mr-2"></i>My Dashboard</a>
-                            <a href="{{ url_for('friends_garage') }}"><i class="fas fa-users mr-2"></i>My Friends</a>
+                            <a href="{{ url_for('home') }}" role="menuitem"><i class="fas fa-home mr-2" aria-hidden="true"></i>My Home</a>
+                            <a href="{{ url_for('cars') }}" role="menuitem"><i class="fas fa-car mr-2" aria-hidden="true"></i>My Cars</a>
+                            <a href="{{ url_for('adv_garage') }}" role="menuitem"><i class="fas fa-chart-bar mr-2" aria-hidden="true"></i>My Dashboard</a>
+                            <a href="{{ url_for('friends_garage') }}" role="menuitem"><i class="fas fa-users mr-2" aria-hidden="true"></i>My Friends</a>
                         {% endif %}
                     </div>
                 </div>
@@ -174,14 +201,14 @@
         <div id="overlay" class="overlay overlay-hidden fixed inset-0 bg-black bg-opacity-50 z-40"></div>
 
         <!-- Slide-out Menu (shared between mobile and desktop) -->
-        <div id="sideMenu" class="menu-transition menu-closed fixed inset-y-0 right-0 w-64 bg-white shadow-lg z-50 p-4">
+        <div id="sideMenu" class="menu-transition menu-closed fixed inset-y-0 right-0 w-64 bg-white shadow-lg z-50 p-4" role="dialog" aria-modal="true" aria-label="Navigation menu">
             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-xl font-semibold">Menu</h2>
-                <button id="closeMenu" class="p-1 rounded-full hover:bg-gray-100">
+                <button id="closeMenu" class="p-1 rounded-full hover:bg-gray-100" aria-label="Close menu">
                     <i class="fas fa-times text-gray-500"></i>
                 </button>
             </div>
-            <nav class="space-y-4">
+            <nav class="space-y-4" role="navigation" aria-label="Main navigation">
                 <a href="{{ url_for('home') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">Home</a>
                 <a href="{{ url_for('cars') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">My Cars</a>
                 <a href="{{ url_for('manage_cars') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded">My Info</a>
@@ -198,7 +225,7 @@
             </nav>
         </div>
 
-        <main class="flex-1 p-6 max-w-6xl w-full mx-auto">
+        <main id="main-content" class="flex-1 p-6 max-w-6xl w-full mx-auto" role="main">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
@@ -223,6 +250,19 @@
             {% endwith %}
             {% block content %}{% endblock %}
         </main>
+
+        <!-- Footer -->
+        <footer class="bg-gray-800 text-white py-6 mt-auto">
+            <div class="max-w-6xl mx-auto px-6">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                    <p class="text-gray-400 text-sm">&copy; 2024 My Garage. All rights reserved.</p>
+                    <nav class="flex gap-6" aria-label="Legal navigation">
+                        <a href="{{ url_for('privacy_policy') }}" class="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
+                        <a href="{{ url_for('terms_of_service') }}" class="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</a>
+                    </nav>
+                </div>
+            </div>
+        </footer>
 
         <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -285,6 +325,7 @@
                 function closeMobileNav() {
                     mobileDropdown?.classList.remove('open');
                     mobileNavChevron?.classList.remove('rotate-180');
+                    mobileNavToggle?.setAttribute('aria-expanded', 'false');
                 }
 
                 mobileNavToggle?.addEventListener('click', function(e) {
@@ -295,6 +336,7 @@
                     } else {
                         mobileDropdown.classList.add('open');
                         mobileNavChevron.classList.add('rotate-180');
+                        mobileNavToggle.setAttribute('aria-expanded', 'true');
                     }
                 });
 

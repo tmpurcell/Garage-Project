@@ -1662,5 +1662,15 @@ def delete_car_photo(car_id, photo_id):
         conn.close()
         return jsonify({'success': False, 'error': f'Error deleting photo: {str(e)}'})
 
+@app.route('/privacy-policy')
+def privacy_policy():
+    """Privacy Policy page"""
+    return render_template('privacy_policy.html')
+
+@app.route('/terms-of-service')
+def terms_of_service():
+    """Terms of Service page"""
+    return render_template('terms_of_service.html')
+
 if __name__ == "__main__":
     app.run(debug=True)

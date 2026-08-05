@@ -43,8 +43,9 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        min-width: 320px;
+        min-width: 280px;
         max-width: 400px;
+        width: 90vw;
         pointer-events: auto;
         transform: scale(0.8) translateY(20px);
         opacity: 0;
@@ -312,7 +313,17 @@
         pointer-events: auto;
     }
 
-    .feature-card:hover .feature-popup {
+    /* Desktop: hover to show */
+    @media (min-width: 768px) {
+        .feature-card:hover .feature-popup {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+    }
+
+    /* Mobile: tap to show */
+    .feature-popup.mobile-active {
         opacity: 1;
         visibility: visible;
         transform: translateX(-50%) translateY(0);
@@ -447,8 +458,8 @@
     </div>
     
     <div class="relative z-10">
-        <h1 class="text-6xl font-bold text-black-900 mb-4 tracking-wide">Welcome to Your Digital Garage 🏁</h1>
-        <p class="text-2xl text-gray-800 mb-8 max-w-3xl mx-auto tracking-wide font-medium">
+        <h1 class="text-4xl md:text-6xl font-bold text-black-900 mb-4 tracking-wide">Welcome to Your Digital Garage 🏁</h1>
+        <p class="text-lg md:text-2xl text-gray-800 mb-8 max-w-3xl mx-auto tracking-wide font-medium">
             Track, maintain, and manage your vehicle collection with ease. Keep detailed records of maintenance, 
             aftermarket parts, and scheduled services all in one place.
         </p>
@@ -567,7 +578,7 @@
     </div>
     
     <div class="relative z-10">
-        <h2 class="text-6xl font-bold text-center text-gray-900 mb-8 tracking-wide">Real Time Stats</h2>
+        <h2 class="text-4xl md:text-6xl font-bold text-center text-gray-900 mb-8 tracking-wide">Real Time Stats</h2>
     
     <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
         <!-- Demo Card 1 -->
@@ -1030,6 +1041,40 @@ document.querySelector('#registerForm')?.addEventListener('submit', function(e) 
     .catch(error => {
         console.error('Error:', error);
         alert('An error occurred. Please try again.');
+    });
+});
+
+// Mobile feature card tap-to-expand
+document.addEventListener('DOMContentLoaded', function() {
+    const featureCards = document.querySelectorAll('.feature-card');
+    
+    featureCards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Only on mobile (screen width < 768px)
+            if (window.innerWidth < 768) {
+                const popup = this.querySelector('.feature-popup');
+                if (popup) {
+                    // Close other open popups
+                    document.querySelectorAll('.feature-popup.mobile-active').forEach(p => {
+                        if (p !== popup) p.classList.remove('mobile-active');
+                    });
+                    // Toggle this popup
+                    popup.classList.toggle('mobile-active');
+                    e.stopPropagation();
+                }
+            }
+        });
+    });
+    
+    // Close popups when clicking outside
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth < 768) {
+            if (!e.target.closest('.feature-card')) {
+                document.querySelectorAll('.feature-popup.mobile-active').forEach(p => {
+                    p.classList.remove('mobile-active');
+                });
+            }
+        }
     });
 });
 
