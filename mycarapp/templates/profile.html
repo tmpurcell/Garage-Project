@@ -92,6 +92,90 @@
             </div>
         </form>
     </div>
+
+    <!-- Bug Report Section -->
+    <div class="bg-white shadow-lg rounded-lg p-8 mt-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Report a Bug</h2>
+        <p class="text-sm text-gray-600 mb-4">Found an issue? Let us know and we'll fix it.</p>
+        
+        <form action="{{ url_for('report_bug') }}" method="POST" class="space-y-4">
+            <div>
+                <label for="bug_title" class="block text-sm font-medium text-gray-700">Bug Title *</label>
+                <input type="text" id="bug_title" name="bug_title" required
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Brief description of the issue">
+            </div>
+            
+            <div>
+                <label for="bug_description" class="block text-sm font-medium text-gray-700">Description *</label>
+                <textarea id="bug_description" name="bug_description" rows="4" required
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Please describe what happened, what you expected to happen, and steps to reproduce the issue"></textarea>
+            </div>
+            
+            <div>
+                <label for="bug_priority" class="block text-sm font-medium text-gray-700">Priority</label>
+                <select id="bug_priority" name="bug_priority"
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <option value="low">Low - Minor inconvenience</option>
+                    <option value="medium" selected>Medium - Affects usability</option>
+                    <option value="high">High - Prevents core functionality</option>
+                    <option value="critical">Critical - App-breaking issue</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+                Submit Bug Report
+            </button>
+        </form>
+    </div>
+
+    <!-- Delete Account Section -->
+    <div class="bg-red-50 border border-red-200 rounded-lg p-8 mt-6">
+        <h2 class="text-xl font-semibold text-red-800 mb-4">Delete Account</h2>
+        <p class="text-sm text-red-700 mb-4">
+            Once you delete your account, there is no going back. Please be certain.
+            This will permanently delete all your vehicles, maintenance records, and data.
+        </p>
+        
+        <button onclick="openDeleteAccountModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+            Delete My Account
+        </button>
+    </div>
+</div>
+
+<!-- Delete Account Confirmation Modal -->
+<div id="deleteAccountModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold text-gray-900">Delete Account</h3>
+            <button onclick="closeDeleteAccountModal()" class="text-gray-400 hover:text-gray-600" aria-label="Close modal">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="mb-4">
+            <p class="text-gray-600 mb-4">This action cannot be undone. All your data will be permanently deleted.</p>
+            
+            <label for="delete_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
+                Type "DELETE" to confirm:
+            </label>
+            <input type="text" id="delete_confirmation" 
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-red-500 focus:border-red-500"
+                placeholder="DELETE">
+        </div>
+        
+        <div class="flex gap-3">
+            <button onclick="closeDeleteAccountModal()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-2 px-4 rounded-lg transition-colors">
+                Cancel
+            </button>
+            <button onclick="confirmDeleteAccount()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                Delete Account
+            </button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -118,6 +202,45 @@ function copyFriendCode() {
     }).catch(function(err) {
         console.error('Failed to copy friend code: ', err);
     });
+}
+
+function openDeleteAccountModal() {
+    document.getElementById('deleteAccountModal').classList.remove('hidden');
+    document.getElementById('delete_confirmation').value = '';
+}
+
+function closeDeleteAccountModal() {
+    document.getElementById('deleteAccountModal').classList.add('hidden');
+}
+
+function confirmDeleteAccount() {
+    const confirmation = document.getElementById('delete_confirmation').value;
+    if (confirmation !== 'DELETE') {
+        alert('Please type "DELETE" to confirm account deletion.');
+        return;
+    }
+    
+    if (confirm('Are you absolutely sure you want to delete your account? This cannot be undone.')) {
+        fetch('/delete-account', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Your account has been deleted successfully.');
+                window.location.href = '/';
+            } else {
+                alert('Error deleting account: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting your account.');
+        });
+    }
 }
 </script>
 {% endblock %}

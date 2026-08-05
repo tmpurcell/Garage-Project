@@ -290,6 +290,31 @@ def migrate_db():
             c.execute('INSERT INTO schema_version (version) VALUES (4)')
             conn.commit()
 
+        if version < 5:
+            # Migration 5 - add bug_reports table
+            migrations = [
+                '''CREATE TABLE IF NOT EXISTS bug_reports (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    username TEXT NOT NULL,
+                    email TEXT,
+                    title TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    priority TEXT DEFAULT 'medium',
+                    status TEXT DEFAULT 'open',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+                )''',
+            ]
+            for sql in migrations:
+                try:
+                    c.execute(sql)
+                except sqlite3.OperationalError:
+                    pass  # Table already exists
+            c.execute('DELETE FROM schema_version')
+            c.execute('INSERT INTO schema_version (version) VALUES (5)')
+            conn.commit()
+
 init_db()
 migrate_db()
 
@@ -1671,6 +1696,102 @@ def privacy_policy():
 def terms_of_service():
     """Terms of Service page"""
     return render_template('terms_of_service.html')
+
+@app.route('/delete-account', methods=['POST'])
+def delete_account():
+    """Delete user account and all associated data"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    
+    user_id = session['user_id']
+    
+    try:
+        conn = get_db()
+        
+        # Delete user's cars and associated data
+        # First get all car IDs for this user
+        cars = conn.execute('SELECT id FROM cars WHERE user_id = ?', (user_id,)).fetchall()
+        car_ids = [car[0] for car in cars]
+        
+        # Delete car photos
+        for car_id in car_ids:
+            photos = conn.execute('SELECT filename FROM car_photos WHERE car_id = ?', (car_id,)).fetchall()
+            for photo in photos:
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], str(user_id), photo[0])
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            conn.execute('DELETE FROM car_photos WHERE car_id = ?', (car_id,))
+        
+        # Delete maintenance records
+        for car_id in car_ids:
+            conn.execute('DELETE FROM maintenance WHERE car_id = ?', (car_id,))
+        
+        # Delete aftermarket parts
+        for car_id in car_ids:
+            conn.execute('DELETE FROM aftermarket_parts WHERE car_id = ?', (car_id,))
+        
+        # Delete scheduled maintenance
+        for car_id in car_ids:
+            conn.execute('DELETE FROM scheduled_maintenance WHERE car_id = ?', (car_id,))
+        
+        # Delete cars
+        conn.execute('DELETE FROM cars WHERE user_id = ?', (user_id,))
+        
+        # Delete friend connections (both as requester and receiver)
+        conn.execute('DELETE FROM friends WHERE user_id = ? OR friend_id = ?', (user_id, user_id))
+        
+        # Delete user
+        conn.execute('DELETE FROM users WHERE id = ?', (user_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        # Clear session
+        session.clear()
+        
+        return jsonify({'success': True, 'message': 'Account deleted successfully'})
+        
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return jsonify({'success': False, 'error': f'Error deleting account: {str(e)}'}), 500
+
+@app.route('/report-bug', methods=['POST'])
+def report_bug():
+    """Handle bug report submissions"""
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    
+    try:
+        title = request.form.get('bug_title', '')
+        description = request.form.get('bug_description', '')
+        priority = request.form.get('bug_priority', 'medium')
+        user_id = session['user_id']
+        
+        if not title or not description:
+            return jsonify({'success': False, 'error': 'Title and description are required'}), 400
+        
+        conn = get_db()
+        
+        # Get user info for the report
+        user = conn.execute('SELECT username, email FROM users WHERE id = ?', (user_id,)).fetchone()
+        
+        # Create bug report entry
+        conn.execute('''
+            INSERT INTO bug_reports (user_id, username, email, title, description, priority, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+        ''', (user_id, user[0], user[1], title, description, priority))
+        
+        conn.commit()
+        conn.close()
+        
+        # TODO: Send email notification to admin
+        # You can configure email sending here
+        
+        return jsonify({'success': True, 'message': 'Bug report submitted successfully'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error submitting bug report: {str(e)}'}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
