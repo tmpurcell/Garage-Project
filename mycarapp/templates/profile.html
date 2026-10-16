@@ -6,6 +6,7 @@
         <h1 class="text-3xl font-bold text-gray-900 mb-8">My Profile</h1>
         
         <form action="{{ url_for('profile') }}" method="POST" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <!-- Personal Information -->
             <div>
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Personal Information</h2>
@@ -99,6 +100,7 @@
         <p class="text-sm text-gray-600 mb-4">Found an issue? Let us know and we'll fix it.</p>
         
         <form action="{{ url_for('report_bug') }}" method="POST" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div>
                 <label for="bug_title" class="block text-sm font-medium text-gray-700">Bug Title *</label>
                 <input type="text" id="bug_title" name="bug_title" required

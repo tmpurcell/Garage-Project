@@ -649,6 +649,7 @@
         {% endwith %}
         
         <form id="loginForm" action="{{ url_for('login') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
             <div class="space-y-4">
                 <div>
@@ -711,6 +712,7 @@
         </div>
         
         <form action="{{ url_for('api_register') }}" method="POST" class="mt-6 space-y-6" id="registerForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="space-y-4">
                 <!-- First Name -->
                 <div>

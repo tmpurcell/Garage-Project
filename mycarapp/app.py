@@ -12,9 +12,92 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from urllib.parse import urlparse
 from PIL import Image
 import io
+import logging
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # Change this to a secure secret key
+
+# Security: Use environment variable for secret key, or generate a secure one
+app.secret_key = os.environ['SECRET_KEY']
+
+# Security: Secure session cookie settings
+app.config.update(
+    SESSION_COOKIE_SECURE=True,  # Only send over HTTPS
+    SESSION_COOKIE_HTTPONLY=True,  # Prevent JavaScript access
+    SESSION_COOKIE_SAMESITE='Lax',  # CSRF protection
+    PERMANENT_SESSION_LIFETIME=timedelta(hours=24)  # Session timeout
+)
+
+# Security: Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('security.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# Security: Add security headers middleware
+@app.after_request
+def add_security_headers(response):
+    # Content Security Policy
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+        "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+        "img-src 'self' data: blob:; "
+        "font-src 'self' https://cdnjs.cloudflare.com; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none';"
+    )
+    # HSTS (only in production with HTTPS)
+    if os.environ.get('FLASK_ENV') == 'production':
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    # Other security headers
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+    return response
+
+# Security: CSRF protection
+@app.context_processor
+def inject_csrf_token():
+    if 'csrf_token' not in session:
+        session['csrf_token'] = secrets.token_hex(32)
+    return dict(csrf_token=session['csrf_token'])
+
+def validate_csrf():
+    """Validate CSRF token for POST requests"""
+    token = request.form.get('csrf_token') or request.headers.get('X-CSRF-Token')
+    if not token or token != session.get('csrf_token'):
+        logger.warning(f"CSRF validation failed from IP: {request.remote_addr}")
+        abort(403, 'CSRF token validation failed')
+    # Regenerate token after successful validation
+    session['csrf_token'] = secrets.token_hex(32)
+
+# Security: Rate limiting for login/register
+login_attempts = {}
+register_attempts = {}
+
+def check_rate_limit(ip, attempts_dict, max_attempts=5, window_minutes=15):
+    """Check if IP has exceeded rate limit"""
+    now = time.time()
+    if ip not in attempts_dict:
+        attempts_dict[ip] = []
+    
+    # Remove attempts outside the time window
+    attempts_dict[ip] = [t for t in attempts_dict[ip] if now - t < window_minutes * 60]
+    
+    if len(attempts_dict[ip]) >= max_attempts:
+        logger.warning(f"Rate limit exceeded for IP: {ip}")
+        return False
+    
+    attempts_dict[ip].append(now)
+    return True
 
 @app.template_filter('currency')
 def currency(value):
@@ -37,6 +120,50 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Security: Enhanced file upload validation
+def validate_file_upload(file_stream, filename):
+    """
+    Validate file upload with magic number checking
+    Returns (is_valid, error_message)
+    """
+    # Check file extension
+    if not allowed_file(filename):
+        return False, "Invalid file type. Allowed types: png, jpg, jpeg, gif, webp, pdf"
+    
+    # Check file size (already limited by MAX_CONTENT_LENGTH, but double-check)
+    file_stream.seek(0, os.SEEK_END)
+    file_size = file_stream.tell()
+    file_stream.seek(0)
+    
+    if file_size > 16 * 1024 * 1024:  # 16MB
+        return False, "File too large. Maximum size is 16MB"
+    
+    # Magic number validation for images
+    magic_numbers = {
+        b'\xff\xd8\xff': 'jpg',
+        b'\x89PNG\r\n\x1a\n': 'png',
+        b'GIF87a': 'gif',
+        b'GIF89a': 'gif',
+        b'RIFF': 'webp',  # WebP starts with RIFF
+        b'%PDF': 'pdf'
+    }
+    
+    file_stream.seek(0)
+    header = file_stream.read(8)
+    file_stream.seek(0)
+    
+    valid_magic = False
+    for magic, ext in magic_numbers.items():
+        if header.startswith(magic):
+            valid_magic = True
+            break
+    
+    if not valid_magic:
+        logger.warning(f"Invalid file magic number for file: {filename}")
+        return False, "Invalid file content. File may be corrupted or not a valid image/PDF"
+    
+    return True, None
 
 def get_user_upload_folder(user_id):
     """Get or create upload folder for a specific user"""
@@ -322,6 +449,14 @@ migrate_db()
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        # Security: Rate limiting
+        if not check_rate_limit(request.remote_addr, login_attempts):
+            logger.warning(f"Login rate limit exceeded for IP: {request.remote_addr}")
+            return jsonify({'success': False, 'error': 'Too many login attempts. Please try again later.'}), 429
+        
+        # Security: CSRF validation
+        validate_csrf()
+        
         email = request.form['username']
         password = request.form['password']
         
@@ -330,15 +465,19 @@ def login():
         conn.close()
         
         if user is None:
+            logger.warning(f"Failed login attempt - user not found: {email} from IP: {request.remote_addr}")
             return jsonify({'success': False, 'error': 'Invalid username or password'})
             
         if not check_password_hash(user['password_hash'], password):
+            logger.warning(f"Failed login attempt - invalid password for: {email} from IP: {request.remote_addr}")
             return jsonify({'success': False, 'error': 'Invalid username or password'})        
             
         session.clear()
         session['user_id'] = user['id']
         session['email'] = user['email']
         session['first_name'] = user['first_name']
+        
+        logger.info(f"Successful login for user: {email} from IP: {request.remote_addr}")
         
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
@@ -350,6 +489,14 @@ def login():
 
 @app.route('/api/register', methods=['POST'])
 def api_register():
+    # Security: Rate limiting
+    if not check_rate_limit(request.remote_addr, register_attempts):
+        logger.warning(f"Registration rate limit exceeded for IP: {request.remote_addr}")
+        return jsonify({'success': False, 'error': 'Too many registration attempts. Please try again later.'}), 429
+    
+    # Security: CSRF validation
+    validate_csrf()
+    
     email = request.form.get('email', '').strip()
     password = request.form.get('password', '')
     confirm_password = request.form.get('confirm_password', '')
@@ -1761,6 +1908,9 @@ def report_bug():
     """Handle bug report submissions"""
     if 'user_id' not in session:
         return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    
+    # Security: CSRF validation
+    validate_csrf()
     
     try:
         title = request.form.get('bug_title', '')
